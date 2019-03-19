@@ -55,10 +55,14 @@ def parse_args():
     # SmartHome
     parser.add_argument('--check-smarthome', dest='smarthome', action='store_true',
         help='Use the AHA HTTP Interface')
-    parser.add_argument('username', nargs='?')
-    parser.add_argument('password', nargs='?')
-    parser.add_argument('port', nargs='?', type=int)
-    parser.add_argument('protocol', nargs='?', choices=['http', 'https'], default='http')
+    parser.add_argument('username', nargs='?',
+        help='Only needed for smarthome check')
+    parser.add_argument('password', nargs='?',
+        help='Only needed for smarthome check')
+    parser.add_argument('port', nargs='?', type=int,
+        help='Only needed for smarthome check')
+    parser.add_argument('protocol', nargs='?', choices=['http', 'https'], default='http',
+        help='Only needed for smarthome check')
 
     args = parser.parse_args()
 
