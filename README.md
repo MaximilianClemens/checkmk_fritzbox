@@ -1,8 +1,10 @@
 # checkmk_fritzbox
-Extended CheckMK FritzBox Agent for SmartHome Devices.
+This repository contains a modified [check_MK](https://mathias-kettner.com/) Fritz!Box Agent which can gather informations over the AVM AHA HTTP Interface about SmartHome Devices connected to an Fritz!Box.
+It also provides a Check for parsing the output, and WATO-Pages for configuring thresholds.
 
 ## CLI Usage
-```./agents/special/agent_fritzbox --help
+```
+./agents/special/agent_fritzbox --help
 usage: agent_fritzbox [-h] [--debug] [--timeout TIMEOUT] [--check-upnp]
                       [--check-smarthome]
                       host [username] [password] [port] [{http,https}]
@@ -26,3 +28,8 @@ optional arguments:
   --check-upnp          Use the UPNP API
   --check-smarthome     Use the AHA HTTP Interface
 ```
+
+## Credits
+* Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
+* Gerold Gruber <info@edv2g.de> / [edv2g](https://edv2g.de/)
+* Maximilian Clemens <maximilian.clemens@mailbox.org>

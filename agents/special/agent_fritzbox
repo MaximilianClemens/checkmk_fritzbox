@@ -73,6 +73,9 @@ def parse_args():
 
     return args
 
+# UPNP START
+# This Part was mainly copied from the original Agent.
+# It were modified a bit.
 g_device  = None
 g_version = None
 
@@ -174,6 +177,8 @@ def check_fritzbox_upnp(debug, hostname):
     for key, value in status.items():
         sys.stdout.write('%s %s\n' % (key, value))
 
+# UPNP END
+
 def check_fritzbox_smarthome(debug, hostname, username, password, port, protocol):
     base_address = '%s://%s:%d' % (protocol, hostname, port)
 
@@ -247,112 +252,3 @@ if __name__ == '__main__':
             if args.debug:
                 raise
             sys.stderr.write('Unhandled error: %s' % traceback.format_exc())
-
-
-
-# ALT
-
-# class RequestError(Exception):
-#     pass
-
-# g_device  = None
-# g_version = None
-
-# base_urls = [ 'http://%s:49000/upnp' % host_address, 'http://%s:49000/igdupnp' % host_address ]
-
-# def get_upnp_info(control, namespace, action):
-#     global g_device, g_version
-
-#     headers = {
-#         'User-agent':   'Check_MK agent_fritzbox',
-#         'Content-Type': 'text/xml',
-#         'SoapAction':   namespace + '#' + action,
-#     }
-
-#     data = '''<?xml version='1.0' encoding='utf-8'?>
-#     <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>
-#         <s:Body>
-#             <u:%s xmlns:u="%s" />
-#         </s:Body>
-#     </s:Envelope>''' % (action, namespace)
-
-#     # Fritz!Box with firmware >= 6.0 use a new url. We try the newer one first and
-#     # try the other one, when the first one did not succeed.
-#     for base_url in base_urls[:]:
-#         url = base_url + '/control/' + control
-#         try:
-#             if opt_debug:
-#                 sys.stdout.write('============================\n')
-#                 sys.stdout.write('URL: %s\n' % url)
-#                 sys.stdout.write('SoapAction: %s\n' % headers['SoapAction'])
-#             req = urllib2.Request(url, data, headers)
-#             handle = urllib2.urlopen(req)
-#             break # got a good response
-#         except urllib2.HTTPError, e:
-#             if e.code == 500:
-#                 # Is the result when the old URL can not be found, continue in this
-#                 # case and revert the order of base urls in the hope that the other
-#                 # url gets a successful result to have only one try on future requests
-#                 # during an agent execution
-#                 base_urls.reverse()
-#                 continue
-#         except Exception, e:
-#             if opt_debug:
-#                 sys.stdout.write('----------------------------\n')
-#                 sys.stdout.write(traceback.format_exc())
-#                 sys.stdout.write('============================\n')
-#             raise RequestError('Error during UPNP call')
-
-#     infos    = handle.info()
-#     contents = handle.read()
-
-#     parts = infos['SERVER'].split("UPnP/1.0 ")[1].split(' ')
-#     g_device  = ' '.join(parts[:-1])
-#     g_version = parts[-1]
-
-#     if opt_debug:
-#         sys.stdout.write('----------------------------\n')
-#         sys.stdout.write('Server: %s\n' % infos['SERVER'])
-#         sys.stdout.write('----------------------------\n')
-#         sys.stdout.write(contents + '\n')
-#         sys.stdout.write('============================\n')
-
-#     # parse the response body
-#     match = re.search('<u:%sResponse[^>]+>(.*)</u:%sResponse>' % (action, action), contents, re.M | re.S)
-#     if not match:
-#         raise APIError('Response is not parsable')
-#     response = match.group(1)
-#     matches = re.findall('<([^>]+)>([^<]+)<[^>]+>', response, re.M | re.S)
-
-#     attrs = {}
-#     for key, val in matches:
-#         attrs[key] = val
-
-#     if opt_debug:
-#         sys.stdout.write('Parsed: %s\n' % pprint.pformat(attrs))
-
-#     return attrs
-
-
-# status = {}
-# for control, namespace, action in [
-#     ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetStatusInfo'),
-#     ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetExternalIPAddress'),
-#     ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetAddonInfos'),
-#     ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetCommonLinkProperties'),
-#     ('WANDSLLinkC1', 'urn:schemas-upnp-org:service:WANDSLLinkConfig:1', 'GetDSLLinkInfo'),
-#     ]:
-#     try:
-#         status.update(get_upnp_info(control, namespace, action))
-#     except:
-#         if opt_debug:
-#             raise
-
-# sys.stdout.write('<<<check_mk>>>\n')
-# sys.stdout.write('Version: %s\n' % g_version)
-# sys.stdout.write('AgentOS: %s\n' % g_device)
-
-# sys.stdout.write('<<<fritz>>>\n')
-# for key, value in status.items():
-#     sys.stdout.write('%s %s\n' % (key, value))
-
