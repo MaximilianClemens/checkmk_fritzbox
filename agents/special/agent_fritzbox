@@ -1,0 +1,354 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+# +------------------------------------------------------------------+
+# |             ____ _               _        __  __ _  __           |
+# |            / ___| |__   ___  ___| | __   |  \/  | |/ /           |
+# |           | |   | '_ \ / _ \/ __| |/ /   | |\/| | ' /            |
+# |           | |___| | | |  __/ (__|   <    | |  | | . \            |
+# |            \____|_| |_|\___|\___|_|\_\___|_|  |_|_|\_\           |
+# |                                                                  |
+# | Copyright Mathias Kettner 2014             mk@mathias-kettner.de |
+# +------------------------------------------------------------------+
+#
+# This file is part of Check_MK.
+# The official homepage is at http://mathias-kettner.de/check_mk.
+#
+# check_mk is free software;  you can redistribute it and/or modify it
+# under the  terms of the  GNU General Public License  as published by
+# the Free Software Foundation in version 2.  check_mk is  distributed
+# in the hope that it will be useful, but WITHOUT ANY WARRANTY;  with-
+# out even the implied warranty of  MERCHANTABILITY  or  FITNESS FOR A
+# PARTICULAR PURPOSE. See the  GNU General Public License for more de-
+# tails. You should have  received  a copy of the  GNU  General Public
+# License along with GNU Make; see the file  COPYING.  If  not,  write
+# to the Free Software Foundation, Inc., 51 Franklin St,  Fifth Floor,
+# Boston, MA 02110-1301 USA.
+
+# This agent uses UPNP API calls to the Fritz!Box to gather information
+# about connection configuration and status.
+# It also uses the AHA HTTP Interface to gather information about the
+# connected SmartHome Devices, such as temperature, powerusage, etc.
+# It's an overlaying extension of the default Check_MK Agent.
+
+
+import getopt, sys, socket, urllib2, traceback, re, pprint
+import argparse
+import xml.etree.ElementTree as ET
+import hashlib
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Check_MK Fritz!Box Agent')
+    parser.add_argument('host', help='Host name or IP address of your Fritz!Box')
+
+    parser.add_argument('--debug', action='store_true', default=False,
+        help='Debug mode: let Python exceptions come through')
+    parser.add_argument('--timeout', '-t', nargs=1, type=int, default=10,
+        help='''Set the network timeout to <SEC> seconds.
+                Default is 10 seconds. Note: the timeout is not
+                applied to the whole check, instead it is used for
+                each API query.''')
+
+    # UPNP
+    parser.add_argument('--check-upnp', dest='upnp', action='store_true',
+        help='Use the UPNP API')
+
+    # SmartHome
+    parser.add_argument('--check-smarthome', dest='smarthome', action='store_true',
+        help='Use the AHA HTTP Interface')
+    parser.add_argument('username', nargs='?')
+    parser.add_argument('password', nargs='?')
+    parser.add_argument('port', nargs='?', type=int)
+    parser.add_argument('protocol', nargs='?', choices=['http', 'https'], default='http')
+
+    args = parser.parse_args()
+
+    if args.smarthome and (not args.username or not args.password or not args.port or not args.protocol):
+        parser.error('--check-smarthome requires username, password, port and protocol')
+    if args.port not in range(0, 65565):
+        parser.error('port must be between 1 and 65565')
+
+    return args
+
+g_device  = None
+g_version = None
+
+def get_upnp_info(debug, base_urls, control, namespace, action):
+    global g_device, g_version
+
+    headers = {
+        'User-agent':   'Check_MK agent_fritzbox',
+        'Content-Type': 'text/xml',
+        'SoapAction':   namespace + '#' + action,
+    }
+
+    data = '''<?xml version='1.0' encoding='utf-8'?>
+    <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>
+        <s:Body>
+            <u:%s xmlns:u="%s" />
+        </s:Body>
+    </s:Envelope>''' % (action, namespace)
+
+    # Fritz!Box with firmware >= 6.0 use a new url. We try the newer one first and
+    # try the other one, when the first one did not succeed.
+    for base_url in base_urls[:]:
+        url = base_url + '/control/' + control
+        try:
+            if debug:
+                sys.stdout.write('============================\n')
+                sys.stdout.write('URL: %s\n' % url)
+                sys.stdout.write('SoapAction: %s\n' % headers['SoapAction'])
+            req = urllib2.Request(url, data, headers)
+            handle = urllib2.urlopen(req)
+            break # got a good response
+        except urllib2.HTTPError, e:
+            if e.code == 500:
+                # Is the result when the old URL can not be found, continue in this
+                # case and revert the order of base urls in the hope that the other
+                # url gets a successful result to have only one try on future requests
+                # during an agent execution
+                base_urls.reverse()
+                continue
+        except Exception, e:
+            if debug:
+                sys.stdout.write('----------------------------\n')
+                sys.stdout.write(traceback.format_exc())
+                sys.stdout.write('============================\n')
+            raise Exception('Error during UPNP call')
+
+    infos    = handle.info()
+    contents = handle.read()
+
+    parts = infos['SERVER'].split("UPnP/1.0 ")[1].split(' ')
+    g_device  = ' '.join(parts[:-1])
+    g_version = parts[-1]
+
+    if debug:
+        sys.stdout.write('----------------------------\n')
+        sys.stdout.write('Server: %s\n' % infos['SERVER'])
+        sys.stdout.write('----------------------------\n')
+        sys.stdout.write(contents + '\n')
+        sys.stdout.write('============================\n')
+
+    # parse the response body
+    match = re.search('<u:%sResponse[^>]+>(.*)</u:%sResponse>' % (action, action), contents, re.M | re.S)
+    if not match:
+        raise APIError('Response is not parsable')
+    response = match.group(1)
+    matches = re.findall('<([^>]+)>([^<]+)<[^>]+>', response, re.M | re.S)
+
+    attrs = {}
+    for key, val in matches:
+        attrs[key] = val
+
+    if debug:
+        sys.stdout.write('Parsed: %s\n' % pprint.pformat(attrs))
+
+    return attrs
+
+def check_fritzbox_upnp(debug, hostname):
+    base_addresses = [ 'http://%s:49000/upnp' % hostname, 'http://%s:49000/igdupnp' % hostname ]
+
+    status = {}
+    for control, namespace, action in [
+        ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetStatusInfo'),
+        ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetExternalIPAddress'),
+        ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetAddonInfos'),
+        ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetCommonLinkProperties'),
+        ('WANDSLLinkC1', 'urn:schemas-upnp-org:service:WANDSLLinkConfig:1', 'GetDSLLinkInfo'),
+        ]:
+        try:
+            status.update(get_upnp_info(debug, base_addresses, control, namespace, action))
+        except:
+            if debug:
+                raise
+
+    sys.stdout.write('<<<check_mk>>>\n')
+    sys.stdout.write('Version: %s\n' % g_version)
+    sys.stdout.write('AgentOS: %s\n' % g_device)
+
+    sys.stdout.write('<<<fritz>>>\n')
+    for key, value in status.items():
+        sys.stdout.write('%s %s\n' % (key, value))
+
+def check_fritzbox_smarthome(debug, hostname, username, password, port, protocol):
+    base_address = '%s://%s:%d' % (protocol, hostname, port)
+
+    # CALL /login_sid.lua
+    # and grab challenge
+    response = urllib2.urlopen(base_address + '/login_sid.lua')
+    xml_login = ET.fromstring(response.read())
+    challenge = xml_login.find('Challenge').text
+
+    # create challenge_response (hash with md5: '<challenge>-<password>')
+    digest = hashlib.md5()
+    digest.update(challenge.encode('utf-16le'))
+    digest.update('-'.encode('utf-16le'))
+    digest.update(password.encode('utf-16le'))
+
+    challenge_response = challenge + '-' + digest.hexdigest()
+
+    # CALL /login_sid.lua?username=<username>&response=<challenge_response>
+    # and grab sessionid
+    response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (username, challenge_response))
+    xml_login_solve = ET.fromstring(response.read())
+    sessionid = xml_login_solve.find('SID').text
+
+    # Write check header
+    sys.stdout.write('<<<fritz_smarthome>>>\n')
+
+    # CALL /webservices/homeautoswitch.lua?switchcmd=getdevicelistinfos&sid=<SID>
+    # and convert response to check output
+    response = urllib2.urlopen(base_address + '/webservices/homeautoswitch.lua?switchcmd=getdevicelistinfos&sid=%s' % (sessionid))
+    response_read = response.read()
+    if debug:
+        sys.stdout.write('Raw XML:\n')
+        sys.stdout.write(response_read)
+
+    xml_devicelist = ET.fromstring(response_read)
+    for device in xml_devicelist.findall('device'):
+        sys.stdout.write('id=%s\n' % device.get('id'))
+        sys.stdout.write('base|functionbitmask=%s\n' % device.get('functionbitmask'))
+        sys.stdout.write('base|fwversion=%s\n' % device.get('fwversion'))
+        sys.stdout.write('base|identifier=%s\n' % device.get('identifier').replace(' ',''))
+        sys.stdout.write('base|manufacturer=%s\n' % device.get('manufacturer'))
+        sys.stdout.write('base|productname=%s\n' % device.get('productname').replace(' ',''))
+        sys.stdout.write('base|present=%s\n' % device.find('present').text)
+        sys.stdout.write('base|name=%s\n' % device.find('name').text)
+
+        for subelement in device.findall('*'):
+            if subelement.tag == 'name':
+                continue
+            if subelement.tag == 'present':
+                continue
+            for detailelement in subelement.findall('*'):
+                sys.stdout.write('%s|%s=%s\n' % (subelement.tag, detailelement.tag, detailelement.text))
+
+if __name__ == '__main__':
+    args = parse_args()
+    socket.setdefaulttimeout(args.timeout)
+
+    if args.upnp:
+        try:
+            check_fritzbox_upnp(args.debug, args.host)
+        except:
+            if args.debug:
+                raise
+            sys.stderr.write('Unhandled error: %s' % traceback.format_exc())
+
+    if args.smarthome:
+        try:
+            check_fritzbox_smarthome(args.debug, args.host, args.username,
+                args.password, args.port, args.protocol)
+        except:
+            if args.debug:
+                raise
+            sys.stderr.write('Unhandled error: %s' % traceback.format_exc())
+
+
+
+# ALT
+
+# class RequestError(Exception):
+#     pass
+
+# g_device  = None
+# g_version = None
+
+# base_urls = [ 'http://%s:49000/upnp' % host_address, 'http://%s:49000/igdupnp' % host_address ]
+
+# def get_upnp_info(control, namespace, action):
+#     global g_device, g_version
+
+#     headers = {
+#         'User-agent':   'Check_MK agent_fritzbox',
+#         'Content-Type': 'text/xml',
+#         'SoapAction':   namespace + '#' + action,
+#     }
+
+#     data = '''<?xml version='1.0' encoding='utf-8'?>
+#     <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>
+#         <s:Body>
+#             <u:%s xmlns:u="%s" />
+#         </s:Body>
+#     </s:Envelope>''' % (action, namespace)
+
+#     # Fritz!Box with firmware >= 6.0 use a new url. We try the newer one first and
+#     # try the other one, when the first one did not succeed.
+#     for base_url in base_urls[:]:
+#         url = base_url + '/control/' + control
+#         try:
+#             if opt_debug:
+#                 sys.stdout.write('============================\n')
+#                 sys.stdout.write('URL: %s\n' % url)
+#                 sys.stdout.write('SoapAction: %s\n' % headers['SoapAction'])
+#             req = urllib2.Request(url, data, headers)
+#             handle = urllib2.urlopen(req)
+#             break # got a good response
+#         except urllib2.HTTPError, e:
+#             if e.code == 500:
+#                 # Is the result when the old URL can not be found, continue in this
+#                 # case and revert the order of base urls in the hope that the other
+#                 # url gets a successful result to have only one try on future requests
+#                 # during an agent execution
+#                 base_urls.reverse()
+#                 continue
+#         except Exception, e:
+#             if opt_debug:
+#                 sys.stdout.write('----------------------------\n')
+#                 sys.stdout.write(traceback.format_exc())
+#                 sys.stdout.write('============================\n')
+#             raise RequestError('Error during UPNP call')
+
+#     infos    = handle.info()
+#     contents = handle.read()
+
+#     parts = infos['SERVER'].split("UPnP/1.0 ")[1].split(' ')
+#     g_device  = ' '.join(parts[:-1])
+#     g_version = parts[-1]
+
+#     if opt_debug:
+#         sys.stdout.write('----------------------------\n')
+#         sys.stdout.write('Server: %s\n' % infos['SERVER'])
+#         sys.stdout.write('----------------------------\n')
+#         sys.stdout.write(contents + '\n')
+#         sys.stdout.write('============================\n')
+
+#     # parse the response body
+#     match = re.search('<u:%sResponse[^>]+>(.*)</u:%sResponse>' % (action, action), contents, re.M | re.S)
+#     if not match:
+#         raise APIError('Response is not parsable')
+#     response = match.group(1)
+#     matches = re.findall('<([^>]+)>([^<]+)<[^>]+>', response, re.M | re.S)
+
+#     attrs = {}
+#     for key, val in matches:
+#         attrs[key] = val
+
+#     if opt_debug:
+#         sys.stdout.write('Parsed: %s\n' % pprint.pformat(attrs))
+
+#     return attrs
+
+
+# status = {}
+# for control, namespace, action in [
+#     ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetStatusInfo'),
+#     ('WANIPConn1', 'urn:schemas-upnp-org:service:WANIPConnection:1', 'GetExternalIPAddress'),
+#     ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetAddonInfos'),
+#     ('WANCommonIFC1', 'urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1', 'GetCommonLinkProperties'),
+#     ('WANDSLLinkC1', 'urn:schemas-upnp-org:service:WANDSLLinkConfig:1', 'GetDSLLinkInfo'),
+#     ]:
+#     try:
+#         status.update(get_upnp_info(control, namespace, action))
+#     except:
+#         if opt_debug:
+#             raise
+
+# sys.stdout.write('<<<check_mk>>>\n')
+# sys.stdout.write('Version: %s\n' % g_version)
+# sys.stdout.write('AgentOS: %s\n' % g_device)
+
+# sys.stdout.write('<<<fritz>>>\n')
+# for key, value in status.items():
+#     sys.stdout.write('%s %s\n' % (key, value))
+

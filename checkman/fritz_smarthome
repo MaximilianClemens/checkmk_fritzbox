@@ -1,0 +1,10 @@
+title: SmartHome Info of Fritz!Box
+agents: fritzbox
+catalog: hw/network/avm
+license: GPL
+distribution: check_mk
+description:
+ jep hier sollte was stehen
+
+inventory:
+ jep hier auch

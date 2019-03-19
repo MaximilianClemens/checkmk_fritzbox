@@ -1,0 +1,16 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+#WORK IN PROGRESS
+
+
+
+
+check_info['fritz_smarthome'] = {
+    'inventory_function'       : inventory_fritz_smarthome,
+    'check_function'           : check_fritz_smarthome,
+    'service_description'      : 'HAN%s',
+    'group'                    : 'fritz_smarthome',
+    'default_levels_variable'  : 'fritz_han_default_levels',
+    'has_perfdata'             : True,
+}
