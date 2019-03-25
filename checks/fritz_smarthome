@@ -1,16 +1,135 @@
 #!/usr/bin/python
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-#WORK IN PROGRESS
+def parse_fritz_han(info):
+    devices = {}
+    current_device_id = None
+
+    for line in info:
+        if 'id=' in line[0]:
+            current_device_id = line[0].split('=')[1]
+            devices[current_device_id] = {}
+            continue
+        else:
+            group = line[0].split('|')[0]
+            item = line[0].split('|')[1].split('=')[0]
+            value = line[0].split('|')[1].split('=')[1]
+            if group not in devices[current_device_id].keys():
+                devices[current_device_id][group] = {}
+            devices[current_device_id][group][item] = value
+
+    return devices
+
+def smarthome_helper_hkr(data, params):
+    return (None, None)
+
+def smarthome_helper_powermeter(data, params):
+    return (None, None)
+
+def smarthome_helper_temperature(data, params):
+    return (None, None)
+
+def smarthome_helper_switch(data, params):
+    return (None, None)
 
 
+def inventory_fritz_smarthome(info):
+    devices = parse_fritz_han(info)
 
+    for device_key, device in devices.items():
+        device_type = 'Unbekannt'
+        fbm = int(device['base']['functionbitmask'])
+        if fbm >> 0 & 1:
+            device_type = 'HANFUNDevice'
+        if fbm >> 4 & 1:
+            device_type = 'AlarmSensor'
+        elif fbm >> 5 & 1:
+            device_type = 'Taster'
+        elif fbm >> 6 & 1:
+            device_type = 'Thermostat'
+        elif fbm >> 7 & 1:
+            device_type = 'Powermeter'
+        elif fbm >> 7 & 1:
+            device_type = 'TemperatureSensor'
+        elif fbm >> 9 & 1:
+            device_type = 'Schaltsteckdose'
+        elif fbm >> 10 & 1:
+            device_type = 'DECTRepeater'
+        elif fbm >> 11 & 1:
+            device_type = 'Microphone'
+        elif fbm >> 13 & 1:
+            device_type = 'HANFUNUnit'
+        yield ('{} {} {}'.format(device_key, device_type, device['base']['name']), None)
+
+def check_fritz_smarthome(item, params, info):
+    devices = parse_fritz_han(info)
+
+    device = None
+    msg_data = []
+    perf_data = []
+    check_status = 0
+
+    # Find current device
+    for device_key, device_n in devices.items():
+        if item.startswith(device_key):
+            device = device_n
+            break
+
+    fbm = int(device['base']['functionbitmask'])
+    if fbm >> 0 & 1: #HANFUNDevice
+        pass
+    if fbm >> 4 & 1: #AlarmSensor
+        #alert
+        pass
+    elif fbm >> 5 & 1: #Taster
+        #button
+        pass
+    elif fbm >> 6 & 1: #Thermostat
+        m, p = (None, None)
+        m, p = smarthome_helper_hkr(device['hkr'], params['hkr'])
+        msg_data.update(m)
+        perf_data.update(p)
+    elif fbm >> 7 & 1: #Powermeter
+        m, p = (None, None)
+        m, p = smarthome_helper_powermeter(device['powermeter'], params['powermeter'])
+        msg_data.update(m)
+        perf_data.update(p)
+    elif fbm >> 7 & 1: #TemperatureSensor
+        m, p = (None, None)
+        m, p = smarthome_helper_temperature(device['temperature'], params['temperature'])
+        msg_data.update(m)
+        perf_data.update(p)
+    elif fbm >> 9 & 1: #Schaltsteckdose
+        m, p = (None, None)
+        m, p = smarthome_helper_switch(device['switch'], params['switch'])
+        msg_data.update(m)
+        perf_data.update(p)
+    elif fbm >> 10 & 1: #DECTRepeater
+        pass
+    elif fbm >> 11 & 1: #Microphone
+        pass
+    elif fbm >> 13 & 1: #HANFUNUnit
+        pass
+
+    if not device_n:
+        return 3, 'DEVICE NOT FOUND'
+    else:
+        return check_status, ', '.join(msg_data), perf_data
+
+
+factory_settings['fritz_smarthome_default_levels'] = {
+    'present': 0,
+    'hkr': {},
+    'switch': {},
+    'powermeter': {},
+    'temperature': {}
+}
 
 check_info['fritz_smarthome'] = {
     'inventory_function'       : inventory_fritz_smarthome,
     'check_function'           : check_fritz_smarthome,
     'service_description'      : 'HAN%s',
     'group'                    : 'fritz_smarthome',
-    'default_levels_variable'  : 'fritz_han_default_levels',
+    'default_levels_variable'  : 'fritz_smarthome_default_levels',
     'has_perfdata'             : True,
 }

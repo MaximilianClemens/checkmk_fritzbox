@@ -32,4 +32,4 @@ optional arguments:
 ## Credits
 * Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
 * Gerold Gruber <info@edv2g.de> / [edv2g](https://edv2g.de/)
-* Maximilian Clemens <maximilian.clemens@mailbox.org>
+* Maximilian Clemens <maximilian.clemens@mailbox.org> / [gamma.red](https://gamma.red/)
