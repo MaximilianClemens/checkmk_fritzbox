@@ -1,19 +1,29 @@
 #!/usr/bin/python
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-def parse_fritz_han(info):
+
+factory_settings['fritz_smarthome_default_levels'] = {
+    'present': 1,
+    'hkr': {},
+    'switch': {},
+    'powermeter': {},
+    'temperature': {}
+}
+
+def parse_fritz_smarthome(info):
     devices = {}
     current_device_id = None
 
     for line in info:
-        if 'id=' in line[0]:
-            current_device_id = line[0].split('=')[1]
+        fullline = ' '.join(line)
+        if 'id=' in fullline:
+            current_device_id = fullline.split('=')[1]
             devices[current_device_id] = {}
             continue
         else:
-            group = line[0].split('|')[0]
-            item = line[0].split('|')[1].split('=')[0]
-            value = line[0].split('|')[1].split('=')[1]
+            group = fullline.split('|')[0]
+            item = fullline.split('|')[1].split('=')[0]
+            value = fullline.split('|')[1].split('=')[1]
             if group not in devices[current_device_id].keys():
                 devices[current_device_id][group] = {}
             devices[current_device_id][group][item] = value
@@ -21,38 +31,96 @@ def parse_fritz_han(info):
     return devices
 
 def smarthome_helper_hkr(data, params):
-    return (None, None)
+    data['hkr']['tist'] = float(data['hkr']['tist'])/2.0
+    data['hkr']['tsoll'] = float(data['hkr']['tsoll'])/2.0
+
+    msg_data = []
+    perf_data = []
+
+    msg_data.append('Thermostat Temperature {}°C (Should: {}°C)'.format(data['hkr']['tist'], data['hkr']['tsoll']))
+    tist = data['hkr']['tist']
+    if 'temperature' in data.keys():
+        # use Temperature Sensor if given (refernced value)
+        tist = float(data['temperature']['celsius'])/10.0
+    diff = (data['hkr']['tsoll']-tist)
+    if diff < 0:
+        diff = diff *-1
+
+    perf_data.append(('Window open', data['hkr']['windowopenactiv']))
+    perf_data.append(('Batterystate', data['hkr']['battery'],
+        params['hkr']['hkr_warn']['hkr_bat_below'],
+        params['hkr']['hkr_crit']['hkr_bat_below'], 0, 100))
+
+    perf_data.append(('Temperature Thermostat', data['hkr']['tist']))
+
+    if float(params['hkr']['hkr_crit']['hkr_diff_soll']) < diff:
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Difference to High ({})'.format(diff))
+    elif float(params['hkr']['hkr_warn']['hkr_diff_soll']) < diff:
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Difference to High ({})'.format(diff))
+
+    if float(params['hkr']['hkr_crit']['hkr_bat_below']) > float(data['hkr']['battery']):
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
+    elif float(params['hkr']['hkr_warn']['hkr_bat_below']) > float(data['hkr']['battery']):
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
+
+    if params['hkr']['hkr_crit']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
+    elif params['hkr']['hkr_warn']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
+
+    if params['hkr']['hkr_crit']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
+    elif params['hkr']['hkr_warn']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
+
+    if params['hkr']['hkr_crit']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
+        check_status = 2 if check_status < 2 else check_status
+    elif params['hkr']['hkr_warn']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
+        check_status = 1 if check_status < 1 else check_status
+
+    if data['hkr']['windowopenactiv'] == "1":
+        msg_data.append('Fenster offen')
+
+    return (msg_data, perf_data)
 
 def smarthome_helper_powermeter(data, params):
-    return (None, None)
+    return (['test','ttt'], [])
 
 def smarthome_helper_temperature(data, params):
-    return (None, None)
+    return (['test'], [])
 
 def smarthome_helper_switch(data, params):
-    return (None, None)
+    return (['test'], [])
 
 
 def inventory_fritz_smarthome(info):
-    devices = parse_fritz_han(info)
+    devices = parse_fritz_smarthome(info)
 
     for device_key, device in devices.items():
-        device_type = 'Unbekannt'
+        device_type = 'Unknown'
         fbm = int(device['base']['functionbitmask'])
         if fbm >> 0 & 1:
             device_type = 'HANFUNDevice'
-        if fbm >> 4 & 1:
+        elif fbm >> 4 & 1:
             device_type = 'AlarmSensor'
         elif fbm >> 5 & 1:
-            device_type = 'Taster'
+            device_type = 'Button'
         elif fbm >> 6 & 1:
             device_type = 'Thermostat'
+        elif fbm >> 9 & 1:
+            device_type = 'Switch'
         elif fbm >> 7 & 1:
             device_type = 'Powermeter'
         elif fbm >> 7 & 1:
             device_type = 'TemperatureSensor'
-        elif fbm >> 9 & 1:
-            device_type = 'Schaltsteckdose'
         elif fbm >> 10 & 1:
             device_type = 'DECTRepeater'
         elif fbm >> 11 & 1:
@@ -62,7 +130,14 @@ def inventory_fritz_smarthome(info):
         yield ('{} {} {}'.format(device_key, device_type, device['base']['name']), None)
 
 def check_fritz_smarthome(item, params, info):
-    devices = parse_fritz_han(info)
+    devices = parse_fritz_smarthome(info)
+
+    #prepared params
+
+    pparams = {}
+    pparams.update(factory_settings['fritz_smarthome_default_levels'])
+    if params:
+        pparams.update(params)
 
     device = None
     msg_data = []
@@ -75,6 +150,15 @@ def check_fritz_smarthome(item, params, info):
             device = device_n
             break
 
+    if device['base']['present'] == '0':
+        if int(pparams['present']) == 1: #WARN
+            check_status = 1 if check_status < 1 else check_status
+        if int(pparams['present']) == 2: #CRIT
+            check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Not Present')
+
+    msg_data.append('{} {} (FW: {})'.format(device['base']['manufacturer'], device['base']['productname'], device['base']['fwversion']))
+
     fbm = int(device['base']['functionbitmask'])
     if fbm >> 0 & 1: #HANFUNDevice
         pass
@@ -85,25 +169,21 @@ def check_fritz_smarthome(item, params, info):
         #button
         pass
     elif fbm >> 6 & 1: #Thermostat
-        m, p = (None, None)
-        m, p = smarthome_helper_hkr(device['hkr'], params['hkr'])
-        msg_data.update(m)
-        perf_data.update(p)
+        r = smarthome_helper_hkr(device, pparams['hkr'])
+        msg_data.extend(r[0])
+        perf_data.extend(r[1])
     elif fbm >> 7 & 1: #Powermeter
-        m, p = (None, None)
-        m, p = smarthome_helper_powermeter(device['powermeter'], params['powermeter'])
-        msg_data.update(m)
-        perf_data.update(p)
+        r = smarthome_helper_powermeter(device, pparams['powermeter'])
+        msg_data.extend(r[0])
+        perf_data.extend(r[1])
     elif fbm >> 7 & 1: #TemperatureSensor
-        m, p = (None, None)
-        m, p = smarthome_helper_temperature(device['temperature'], params['temperature'])
-        msg_data.update(m)
-        perf_data.update(p)
+        r = smarthome_helper_temperature(device, pparams['temperature'])
+        msg_data.extend(r[0])
+        perf_data.extend(r[1])
     elif fbm >> 9 & 1: #Schaltsteckdose
-        m, p = (None, None)
-        m, p = smarthome_helper_switch(device['switch'], params['switch'])
-        msg_data.update(m)
-        perf_data.update(p)
+        r = smarthome_helper_switch(device, pparams['switch'])
+        msg_data.extend(r[0])
+        perf_data.extend(r[1])
     elif fbm >> 10 & 1: #DECTRepeater
         pass
     elif fbm >> 11 & 1: #Microphone
@@ -116,19 +196,10 @@ def check_fritz_smarthome(item, params, info):
     else:
         return check_status, ', '.join(msg_data), perf_data
 
-
-factory_settings['fritz_smarthome_default_levels'] = {
-    'present': 0,
-    'hkr': {},
-    'switch': {},
-    'powermeter': {},
-    'temperature': {}
-}
-
 check_info['fritz_smarthome'] = {
     'inventory_function'       : inventory_fritz_smarthome,
     'check_function'           : check_fritz_smarthome,
-    'service_description'      : 'HAN%s',
+    'service_description'      : 'DEVELOP%s',
     'group'                    : 'fritz_smarthome',
     'default_levels_variable'  : 'fritz_smarthome_default_levels',
     'has_perfdata'             : True,
