@@ -4,7 +4,18 @@
 
 factory_settings['fritz_smarthome_default_levels'] = {
     'present': 1,
-    'hkr': {},
+    'hkr': {
+        'hkr_warn' : {
+            'hkr_bat_below' : 30,
+            'hkr_diff_soll': 5,
+            'hkr_flags': [True, True, False]
+        },
+        'hkr_crit' : {
+            'hkr_bat_below' : 20,
+            'hkr_diff_soll': 8,
+            'hkr_flags': [True, True, False]
+        },
+    },
     'switch': {},
     'powermeter': {},
     'temperature': {}
@@ -33,6 +44,10 @@ def parse_fritz_smarthome(info):
 def smarthome_helper_hkr(data, params):
     data['hkr']['tist'] = float(data['hkr']['tist'])/2.0
     data['hkr']['tsoll'] = float(data['hkr']['tsoll'])/2.0
+    data['hkr']['absenk'] = float(data['hkr']['absenk'])/2.0
+    data['hkr']['komfort'] = float(data['hkr']['komfort'])/2.0
+
+    check_status = 0
 
     msg_data = []
     perf_data = []
@@ -41,64 +56,75 @@ def smarthome_helper_hkr(data, params):
     tist = data['hkr']['tist']
     if 'temperature' in data.keys():
         # use Temperature Sensor if given (refernced value)
-        tist = float(data['temperature']['celsius'])/10.0
+        temperature_celsius = float(data['temperature']['celsius'])/10.0
+        temperature_offset = float(data['temperature']['offset'])/10.0
+        tist = temperature_celsius
+        #perf_data.append(('temperature_celsius', temperature_celsius))
+        #perf_data.append(('temperature_offset', temperature_offset))
+
     diff = (data['hkr']['tsoll']-tist)
     if diff < 0:
         diff = diff *-1
 
-    perf_data.append(('Window open', data['hkr']['windowopenactiv']))
-    perf_data.append(('Batterystate', data['hkr']['battery'],
-        params['hkr']['hkr_warn']['hkr_bat_below'],
-        params['hkr']['hkr_crit']['hkr_bat_below'], 0, 100))
+    perf_data.append(('hkr_windowopenactiv', data['hkr']['windowopenactiv']))
+    perf_data.append(('hkr_battery', data['hkr']['battery'],
+        params['hkr_warn']['hkr_bat_below'],
+        params['hkr_crit']['hkr_bat_below'], 0, 100))
 
-    perf_data.append(('Temperature Thermostat', data['hkr']['tist']))
+    #perf_data.append(('hkr_tist', data['hkr']['tist']))
+    perf_data.append(('hkr_tsoll', data['hkr']['tsoll']))
+    perf_data.append(('hkr_absenk', data['hkr']['absenk']))
+    perf_data.append(('hkr_komfort', data['hkr']['komfort']))
 
-    if float(params['hkr']['hkr_crit']['hkr_diff_soll']) < diff:
+    perf_data.append(('ref_temperature', tist))
+
+
+    if float(params['hkr_crit']['hkr_diff_soll']) < diff:
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Difference to High ({})'.format(diff))
-    elif float(params['hkr']['hkr_warn']['hkr_diff_soll']) < diff:
+    elif float(params['hkr_warn']['hkr_diff_soll']) < diff:
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Difference to High ({})'.format(diff))
 
-    if float(params['hkr']['hkr_crit']['hkr_bat_below']) > float(data['hkr']['battery']):
+    if float(params['hkr_crit']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
-    elif float(params['hkr']['hkr_warn']['hkr_bat_below']) > float(data['hkr']['battery']):
+    elif float(params['hkr_warn']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
 
-    if params['hkr']['hkr_crit']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
+    if params['hkr_crit']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
-    elif params['hkr']['hkr_warn']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
+    elif params['hkr_warn']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
 
-    if params['hkr']['hkr_crit']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
+    if params['hkr_crit']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
-    elif params['hkr']['hkr_warn']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
+    elif params['hkr_warn']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
 
-    if params['hkr']['hkr_crit']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
+    if params['hkr_crit']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
         check_status = 2 if check_status < 2 else check_status
-    elif params['hkr']['hkr_warn']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
+    elif params['hkr_warn']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
         check_status = 1 if check_status < 1 else check_status
 
     if data['hkr']['windowopenactiv'] == "1":
         msg_data.append('Fenster offen')
 
-    return (msg_data, perf_data)
+    return (msg_data, perf_data, check_status)
 
 def smarthome_helper_powermeter(data, params):
-    return (['test','ttt'], [])
+    return (['test','ttt'], [], 0)
 
 def smarthome_helper_temperature(data, params):
-    return (['test'], [])
+    return (['test'], [], 0)
 
 def smarthome_helper_switch(data, params):
-    return (['test'], [])
+    return (['test'], [], 0)
 
 
 def inventory_fritz_smarthome(info):
@@ -172,18 +198,22 @@ def check_fritz_smarthome(item, params, info):
         r = smarthome_helper_hkr(device, pparams['hkr'])
         msg_data.extend(r[0])
         perf_data.extend(r[1])
+        check_status = r[2] if check_status < r[2] else check_status
     elif fbm >> 7 & 1: #Powermeter
         r = smarthome_helper_powermeter(device, pparams['powermeter'])
         msg_data.extend(r[0])
         perf_data.extend(r[1])
+        check_status = r[2] if check_status < r[2] else check_status
     elif fbm >> 7 & 1: #TemperatureSensor
         r = smarthome_helper_temperature(device, pparams['temperature'])
         msg_data.extend(r[0])
         perf_data.extend(r[1])
+        check_status = r[2] if check_status < r[2] else check_status
     elif fbm >> 9 & 1: #Schaltsteckdose
         r = smarthome_helper_switch(device, pparams['switch'])
         msg_data.extend(r[0])
         perf_data.extend(r[1])
+        check_status = r[2] if check_status < r[2] else check_status
     elif fbm >> 10 & 1: #DECTRepeater
         pass
     elif fbm >> 11 & 1: #Microphone
@@ -199,7 +229,7 @@ def check_fritz_smarthome(item, params, info):
 check_info['fritz_smarthome'] = {
     'inventory_function'       : inventory_fritz_smarthome,
     'check_function'           : check_fritz_smarthome,
-    'service_description'      : 'DEVELOP%s',
+    'service_description'      : 'SmartDevice %s',
     'group'                    : 'fritz_smarthome',
     'default_levels_variable'  : 'fritz_smarthome_default_levels',
     'has_perfdata'             : True,
