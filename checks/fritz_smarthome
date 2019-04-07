@@ -48,7 +48,6 @@ def smarthome_helper_hkr(data, params):
     data['hkr']['komfort'] = float(data['hkr']['komfort'])/2.0
 
     check_status = 0
-
     msg_data = []
     perf_data = []
 
@@ -118,13 +117,37 @@ def smarthome_helper_hkr(data, params):
     return (msg_data, perf_data, check_status)
 
 def smarthome_helper_powermeter(data, params):
-    return (['test','ttt'], [], 0)
+
+    data['powermeter']['power'] = float(data['powermeter']['power'])/1000
+    data['powermeter']['energy'] = float(data['powermeter']['energy'])/1000
+    data['powermeter']['voltage'] = float(data['powermeter']['voltage'])/1000
+
+    check_status = 0
+    msg_data = []
+    perf_data = []
+
+    perf_data.append(('powermeter_power', data['powermeter']['power'])) # Leistung
+    perf_data.append(('powermeter_energy', data['powermeter']['energy'])) # Verbauch (consumption)
+    perf_data.append(('powermeter_voltage', data['powermeter']['voltage'])) # Spannung
+    msg_data.append('Power: {}W, Consumption: {}kWh, Voltage: {}V'.format(data['powermeter']['power'], data['powermeter']['energy'], data['powermeter']['voltage']))
+
+    return (msg_data, perf_data, check_status)
 
 def smarthome_helper_temperature(data, params):
-    return (['test'], [], 0)
+    return ([], [], 0)
 
 def smarthome_helper_switch(data, params):
-    return (['test'], [], 0)
+
+    check_status = 0
+    msg_data = []
+    perf_data = []
+
+    switch_status = 'ON' if data['switch']['state'] == str(1) else 'OFF'
+    msg_data.append('State: {} ({})'.format(switch_status, data['switch']['mode']))
+
+    perf_data.append(('switch_state', data['switch']['state']))
+
+    return (msg_data, perf_data, check_status)
 
 
 def inventory_fritz_smarthome(info):
@@ -185,41 +208,42 @@ def check_fritz_smarthome(item, params, info):
 
     msg_data.append('{} {} (FW: {})'.format(device['base']['manufacturer'], device['base']['productname'], device['base']['fwversion']))
 
-    fbm = int(device['base']['functionbitmask'])
-    if fbm >> 0 & 1: #HANFUNDevice
-        pass
-    if fbm >> 4 & 1: #AlarmSensor
-        #alert
-        pass
-    elif fbm >> 5 & 1: #Taster
-        #button
-        pass
-    elif fbm >> 6 & 1: #Thermostat
-        r = smarthome_helper_hkr(device, pparams['hkr'])
-        msg_data.extend(r[0])
-        perf_data.extend(r[1])
-        check_status = r[2] if check_status < r[2] else check_status
-    elif fbm >> 7 & 1: #Powermeter
-        r = smarthome_helper_powermeter(device, pparams['powermeter'])
-        msg_data.extend(r[0])
-        perf_data.extend(r[1])
-        check_status = r[2] if check_status < r[2] else check_status
-    elif fbm >> 7 & 1: #TemperatureSensor
-        r = smarthome_helper_temperature(device, pparams['temperature'])
-        msg_data.extend(r[0])
-        perf_data.extend(r[1])
-        check_status = r[2] if check_status < r[2] else check_status
-    elif fbm >> 9 & 1: #Schaltsteckdose
-        r = smarthome_helper_switch(device, pparams['switch'])
-        msg_data.extend(r[0])
-        perf_data.extend(r[1])
-        check_status = r[2] if check_status < r[2] else check_status
-    elif fbm >> 10 & 1: #DECTRepeater
-        pass
-    elif fbm >> 11 & 1: #Microphone
-        pass
-    elif fbm >> 13 & 1: #HANFUNUnit
-        pass
+    if device['base']['present'] != '0':
+        fbm = int(device['base']['functionbitmask'])
+        if fbm >> 0 & 1: #HANFUNDevice
+            pass
+        if fbm >> 4 & 1: #AlarmSensor
+            #alert
+            pass
+        if fbm >> 5 & 1: #Taster
+            #button
+            pass
+        if fbm >> 6 & 1: #Thermostat
+            r = smarthome_helper_hkr(device, pparams['hkr'])
+            msg_data.extend(r[0])
+            perf_data.extend(r[1])
+            check_status = r[2] if check_status < r[2] else check_status
+        if fbm >> 9 & 1: #Schaltsteckdose
+            r = smarthome_helper_switch(device, pparams['switch'])
+            msg_data.extend(r[0])
+            perf_data.extend(r[1])
+            check_status = r[2] if check_status < r[2] else check_status
+        if fbm >> 7 & 1: #Powermeter
+            r = smarthome_helper_powermeter(device, pparams['powermeter'])
+            msg_data.extend(r[0])
+            perf_data.extend(r[1])
+            check_status = r[2] if check_status < r[2] else check_status
+        if fbm >> 7 & 1: #TemperatureSensor
+            r = smarthome_helper_temperature(device, pparams['temperature'])
+            msg_data.extend(r[0])
+            perf_data.extend(r[1])
+            check_status = r[2] if check_status < r[2] else check_status
+        if fbm >> 10 & 1: #DECTRepeater
+            pass
+        if fbm >> 11 & 1: #Microphone
+            pass
+        if fbm >> 13 & 1: #HANFUNUnit
+            pass
 
     if not device_n:
         return 3, 'DEVICE NOT FOUND'
