@@ -31,42 +31,42 @@ optional arguments:
 
 ## Tested Devices
 * AVM FRITZ!DECT210 (FW 04.16)
-  Switching Socket
-  Function Values: powermeter, temperature, switch
+   * Switching Socket
+   * Function Values: powermeter, temperature, switch
 * AVM FRITZ!DECT200 (FW 04.16)
-  Switching Socket
-  Function Values: powermeter, temperature, switch
+   * Switching Socket
+   * Function Values: powermeter, temperature, switch
 * AVM FRITZ!DECT301 (FW: 04.88)
-  Thermostat
-  Function Values: temperature, hkr
+   * Thermostat
+   * Function Values: temperature, hkr
 * AVM FRITZ!DECTRepeater100 (FW 04.16)
-  DECTRepeater
-  Function Values: temperature
+   * DECTRepeater
+   * Function Values: temperature
 * AVM FRITZ!DECT400 (FW: 04.90)
-  Button
-  Function Values: button
+   * Button
+   * Function Values: button
 * Eurotronic CometDECT (FW 03.54)
-  Thermostat
-  Function Values: temperature, hkr
+   * Thermostat
+   * Function Values: temperature, hkr
 
 ## Function Value implementation:
 * base (this means generic device infos)
-  Graphs: None
-  Status: When Device present OK, else WARN
+   * Graphs: None
+   * Status: When Device present OK, else WARN
 * powermeter
-  Graphs: Consumption (kWh), Voltage (V), Power (W)
-  Status: Always okay (Check Rule Page work in progress)
+   * Graphs: Consumption (kWh), Voltage (V), Power (W)
+   * Status: Always okay (Check Rule Page work in progress)
 * temperature
-  Graphs: Nothing yet (work in progress)
-  Status: Always okay (Check Rule Page work in progress)
+   * Graphs: Nothing yet (work in progress)
+   * Status: Always okay (Check Rule Page work in progress)
 * switch
-  Graphs: Switch State
-  Status: Always okay (Check Rule Page work in progress)
+   * Graphs: Switch State
+   * Status: Always okay (Check Rule Page work in progress)
 * hkr
-  Graphs: Temperature, Battery, Window Open
-  Status: Compare against default params (Check Rule Page work in progress)
+   * Graphs: Temperature, Battery, Window Open
+   * Status: Compare against default params (Check Rule Page work in progress)
 * button
-  Nothing yet (no idea what to check here)
+   * Nothing yet (no idea what to check here)
 
 ## Credits
 * Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
