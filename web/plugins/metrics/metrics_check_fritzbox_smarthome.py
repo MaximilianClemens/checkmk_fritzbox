@@ -39,7 +39,7 @@ metric_info["ref_temperature"] = {
 }
 
 graph_info["fritzbox_smarthome_temperature"] = {
-    "title"   : _("Temperature"),
+    "title"   : _("Temperature Thermostat"),
     "metrics" : [
         ( "ref_temperature", "area" ),
         ( "hkr_komfort", "line" ),
@@ -96,4 +96,34 @@ metric_info["switch_state"] = {
     "title" : _("Switch State"),
     "color": "#7192ad",
     "unit" : "count",
+}
+
+
+## Temp
+
+metric_info["temperature_celsius"] = {
+    "title" : _("Temperature"),
+    "color": "#009999",
+    "unit" : "c",
+}
+
+metric_info["temperature_offset"] = {
+    "title" : _("Temperature Offset"),
+    "color": "#cc9900",
+    "unit" : "c",
+}
+
+metric_info["temperature_real"] = {
+    "title" : _("Temperature Offset"),
+    "color": "#990000",
+    "unit" : "c",
+}
+
+graph_info["fritzbox_smarthome_temperature_real"] = {
+    "title"   : _("Temperature Sensor"),
+    "metrics" : [
+        ( "temperature_celsius", "area" ),
+        ( "temperature_offset", "stack" ),
+        ( "temperature_real", "line" )
+    ],
 }

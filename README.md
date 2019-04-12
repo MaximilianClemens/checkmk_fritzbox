@@ -72,3 +72,6 @@ optional arguments:
 * Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
 * Gerold Gruber <info@edv2g.de> / [edv2g](https://edv2g.de/)
 * Maximilian Clemens <maximilian.clemens@mailbox.org> / [gamma.red](https://gamma.red/)
+
+## Informations
+[AVM - AHA-HTTP-Interface Dokumentation](https://avm.de/fileadmin/user_upload/Global/Service/Schnittstellen/AHA-HTTP-Interface.pdf)
