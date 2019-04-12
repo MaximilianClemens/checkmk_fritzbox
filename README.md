@@ -57,13 +57,13 @@ optional arguments:
    * Graphs: Consumption (kWh), Voltage (V), Power (W)
    * Status: Always okay (Check Rule Page work in progress)
 * temperature
-   * Graphs: Nothing yet (work in progress)
+   * Graphs: Temperature Sensor
    * Status: Always okay (Check Rule Page work in progress)
 * switch
    * Graphs: Switch State
    * Status: Always okay (Check Rule Page work in progress)
 * hkr
-   * Graphs: Temperature, Battery, Window Open
+   * Graphs: Temperature Thermostat, Battery, Window Open
    * Status: Compare against default params (Check Rule Page work in progress)
 * button
    * Nothing yet (no idea what to check here)
@@ -72,3 +72,6 @@ optional arguments:
 * Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
 * Gerold Gruber <info@edv2g.de> / [edv2g](https://edv2g.de/)
 * Maximilian Clemens <maximilian.clemens@mailbox.org> / [gamma.red](https://gamma.red/)
+
+## Informations
+[AVM - AHA-HTTP-Interface Dokumentation](https://avm.de/fileadmin/user_upload/Global/Service/Schnittstellen/AHA-HTTP-Interface.pdf)

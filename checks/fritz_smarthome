@@ -134,7 +134,18 @@ def smarthome_helper_powermeter(data, params):
     return (msg_data, perf_data, check_status)
 
 def smarthome_helper_temperature(data, params):
-    return ([], [], 0)
+
+    check_status = 0
+    msg_data = []
+    perf_data = []
+
+    temperature_celsius = float(data['temperature']['celsius'])/10.0
+    temperature_offset = float(data['temperature']['offset'])/10.0
+    perf_data.append(('temperature_celsius', temperature_celsius))
+    perf_data.append(('temperature_offset', temperature_offset*-1))
+    perf_data.append(('temperature_real', temperature_celsius+(temperature_offset*-1)))
+
+    return (msg_data, perf_data, check_status)
 
 def smarthome_helper_switch(data, params):
 
@@ -168,10 +179,10 @@ def inventory_fritz_smarthome(info):
             device_type = 'Switch'
         elif fbm >> 7 & 1:
             device_type = 'Powermeter'
-        elif fbm >> 7 & 1:
-            device_type = 'TemperatureSensor'
         elif fbm >> 10 & 1:
             device_type = 'DECTRepeater'
+        elif fbm >> 8 & 1:
+            device_type = 'TemperatureSensor'
         elif fbm >> 11 & 1:
             device_type = 'Microphone'
         elif fbm >> 13 & 1:
@@ -233,7 +244,7 @@ def check_fritz_smarthome(item, params, info):
             msg_data.extend(r[0])
             perf_data.extend(r[1])
             check_status = r[2] if check_status < r[2] else check_status
-        if fbm >> 7 & 1: #TemperatureSensor
+        if fbm >> 8 & 1: #TemperatureSensor
             r = smarthome_helper_temperature(device, pparams['temperature'])
             msg_data.extend(r[0])
             perf_data.extend(r[1])
