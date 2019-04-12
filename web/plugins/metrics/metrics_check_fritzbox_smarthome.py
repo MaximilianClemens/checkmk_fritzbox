@@ -98,7 +98,6 @@ metric_info["switch_state"] = {
     "unit" : "count",
 }
 
-
 ### Temperature
 
 metric_info["temperature_celsius"] = {
