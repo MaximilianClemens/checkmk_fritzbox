@@ -46,6 +46,7 @@ graph_info["fritzbox_smarthome_temperature"] = {
         ( "hkr_absenk", "line" ),
         ( "hkr_tsoll", "line" ),
     ],
+    "optional_metrics" : [ "hkr_tsoll", ],
 }
 
 perfometer_info.append({
@@ -101,7 +102,7 @@ metric_info["switch_state"] = {
 ### Temperature
 
 metric_info["temperature_celsius"] = {
-    "title" : _("Temperature"),
+    "title" : _("Temperature Calculated"),
     "color": "#009999",
     "unit" : "c",
 }
@@ -121,8 +122,8 @@ metric_info["temperature_real"] = {
 graph_info["fritzbox_smarthome_temperature_real"] = {
     "title"   : _("Temperature Sensor"),
     "metrics" : [
+        #( "temperature_real", "line" ),
         ( "temperature_celsius", "area" ),
-        ( "temperature_offset", "stack" ),
-        ( "temperature_real", "line" )
+        ( "temperature_offset", "stack" )
     ],
 }

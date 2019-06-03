@@ -51,7 +51,11 @@ def smarthome_helper_hkr(data, params):
     msg_data = []
     perf_data = []
 
-    msg_data.append('Thermostat Temperature {}°C (Should: {}°C)'.format(data['hkr']['tist'], data['hkr']['tsoll']))
+    if (data['hkr']['summeractive']):
+        msg_data.append('Thermostat Temperature {}°C (Summer-Mode)'.format(data['hkr']['tist']))
+    else:
+        msg_data.append('Thermostat Temperature {}°C (Should: {}°C)'.format(data['hkr']['tist'], data['hkr']['tsoll']))
+
     tist = data['hkr']['tist']
     if 'temperature' in data.keys():
         # use Temperature Sensor if given (refernced value)
@@ -71,40 +75,44 @@ def smarthome_helper_hkr(data, params):
         params['hkr_crit']['hkr_bat_below'], 0, 100))
 
     #perf_data.append(('hkr_tist', data['hkr']['tist']))
-    perf_data.append(('hkr_tsoll', data['hkr']['tsoll']))
+    if (not data['hkr']['summeractive']):
+        perf_data.append(('hkr_tsoll', data['hkr']['tsoll']))
+    else:
+        perf_data.append(('hkr_tsoll', 0))
+
     perf_data.append(('hkr_absenk', data['hkr']['absenk']))
     perf_data.append(('hkr_komfort', data['hkr']['komfort']))
 
     perf_data.append(('ref_temperature', tist))
 
-
-    if float(params['hkr_crit']['hkr_diff_soll']) < diff:
-        check_status = 2 if check_status < 2 else check_status
-        msg_data.append('Difference to High ({})'.format(diff))
-    elif float(params['hkr_warn']['hkr_diff_soll']) < diff:
-        check_status = 1 if check_status < 1 else check_status
-        msg_data.append('Difference to High ({})'.format(diff))
+    if (not data['hkr']['summeractive']):
+        if float(params['hkr_crit']['hkr_diff_soll']) < diff:
+            check_status = 2 if check_status < 2 else check_status
+            msg_data.append('Difference to High ({})'.format(diff))
+        elif float(params['hkr_warn']['hkr_diff_soll']) < diff:
+            check_status = 1 if check_status < 1 else check_status
+            msg_data.append('Difference to High ({})'.format(diff))
 
     if float(params['hkr_crit']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 2 if check_status < 2 else check_status
-        msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
+        msg_data.append('Battery low ({}%)!'.format(data['hkr']['battery']))
     elif float(params['hkr_warn']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 1 if check_status < 1 else check_status
-        msg_data.append('Batterie schwach ({}%)!'.format(data['hkr']['battery']))
+        msg_data.append('Battery low ({}%)!'.format(data['hkr']['battery']))
 
     if params['hkr_crit']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
         check_status = 2 if check_status < 2 else check_status
-        msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
+        msg_data.append('Errorcode: {}'.format(data['hkr']['errorcode']))
     elif params['hkr_warn']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
         check_status = 1 if check_status < 1 else check_status
-        msg_data.append('Fehlercode: {}'.format(data['hkr']['errorcode']))
+        msg_data.append('Errorcode: {}'.format(data['hkr']['errorcode']))
 
     if params['hkr_crit']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 2 if check_status < 2 else check_status
-        msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
+        msg_data.append('Batterywarning ({}%)'.format(data['hkr']['battery']))
     elif params['hkr_warn']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 1 if check_status < 1 else check_status
-        msg_data.append('Batteriewarnung ({}%)'.format(data['hkr']['battery']))
+        msg_data.append('Batterywarning ({}%)'.format(data['hkr']['battery']))
 
     if params['hkr_crit']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
         check_status = 2 if check_status < 2 else check_status
@@ -112,7 +120,7 @@ def smarthome_helper_hkr(data, params):
         check_status = 1 if check_status < 1 else check_status
 
     if data['hkr']['windowopenactiv'] == "1":
-        msg_data.append('Fenster offen')
+        msg_data.append('Window is open')
 
     return (msg_data, perf_data, check_status)
 
@@ -143,7 +151,7 @@ def smarthome_helper_temperature(data, params):
     temperature_offset = float(data['temperature']['offset'])/10.0
     perf_data.append(('temperature_celsius', temperature_celsius))
     perf_data.append(('temperature_offset', temperature_offset*-1))
-    perf_data.append(('temperature_real', temperature_celsius+(temperature_offset*-1)))
+    #perf_data.append(('temperature_real', (temperature_celsius+(temperature_offset*-1))))
 
     return (msg_data, perf_data, check_status)
 
