@@ -149,6 +149,7 @@ def smarthome_helper_temperature(data, params):
 
     temperature_celsius = float(data['temperature']['celsius'])/10.0
     temperature_offset = float(data['temperature']['offset'])/10.0
+    
     perf_data.append(('temperature_celsius', temperature_celsius))
     perf_data.append(('temperature_offset', temperature_offset*-1))
     #perf_data.append(('temperature_real', (temperature_celsius+(temperature_offset*-1))))

@@ -222,7 +222,7 @@ def check_fritzbox_smarthome(debug, hostname, username, password, port, protocol
         sys.stdout.write('base|manufacturer=%s\n' % device.get('manufacturer'))
         sys.stdout.write('base|productname=%s\n' % device.get('productname').replace(' ',''))
         sys.stdout.write('base|present=%s\n' % device.find('present').text)
-        sys.stdout.write('base|name=%s\n' % device.find('name').text)
+        sys.stdout.write('base|name=%s\n' % device.find('name').text.encode('ascii','ignore'))
 
         for subelement in device.findall('*'):
             if subelement.tag == 'name':

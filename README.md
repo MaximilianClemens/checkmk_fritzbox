@@ -55,18 +55,31 @@ optional arguments:
    * Status: When Device present OK, else WARN
 * powermeter
    * Graphs: Consumption (kWh), Voltage (V), Power (W)
-   * Status: Always okay (Check Rule Page work in progress)
+   * Status: Always okay
 * temperature
    * Graphs: Temperature Sensor
-   * Status: Always okay (Check Rule Page work in progress)
+   * Status: Always okay
 * switch
    * Graphs: Switch State
-   * Status: Always okay (Check Rule Page work in progress)
+   * Status: Always okay
 * hkr
    * Graphs: Temperature Thermostat, Battery, Window Open
-   * Status: Compare against default params (Check Rule Page work in progress)
+   * Status: Compare against default params
 * button
    * Nothing yet (no idea what to check here)
+
+## How to setup
+* Way 1:
+   * Copy the files from this repo to your /omd/sites/<omdname>/local dir
+* Way 2 (probably preferred, never tested but should work):
+   * Grab the .mkp file from releases
+   * on your omd site enter mkp install package.mkp (see https://checkmk.de/cms_mkps.html)
+* Configure:
+   * Host & Service Parameters
+   * search for Check state of Fritz!Box Devices
+   * there should now be a new option "Query SmartHome Devices"
+   * enter the credentials and save
+   * (re)-inventory the (fritzbox) host, the smarthome devices should now be detected
 
 ## Credits
 * Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
