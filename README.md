@@ -63,7 +63,7 @@ optional arguments:
 ## How to setup
 * ensure you are wokring with checkmk 1.6
 * Install current package
-   * wget https://github.com/MaximilianClemens/checkmk_fritzbox_smarthome/releases/download/v0.3/fritzbox_smarthome-0.3.mkp -P ~/var/check_mk/packages/
+   * wget https://github.com/MaximilianClemens/checkmk_fritzbox/releases/download/v0.3/fritzbox_smarthome-0.3.mkp -P ~/var/check_mk/packages/
    * mkp install /var/check_mk/packages/fritzbox_smarthome-0.3.mkp
 * Configure:
    * Create a new Host for your fritzbox
