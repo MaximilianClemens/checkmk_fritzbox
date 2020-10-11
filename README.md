@@ -5,20 +5,23 @@ It also provides a Check for parsing the output, and WATO-Pages for configuring 
 ## CLI Usage
 ```
 ./agents/special/agent_fritzbox_smarthome --help
-usage: agent_fritzbox_smarthome [-h] [--debug] host [username] [password] [port] [{http,https}]
+usage: agent_fritzbox_smarthome [-h] [--debug] [--username [USERNAME]]
+                                [--password [PASSWORD]] [--port [PORT]]
+                                [--protocol [{http,https}]]
+                                host
 
 Check_MK Fritz!Box Smarthome Agent
 
 positional arguments:
   host                  Host name or IP address of your Fritz!Box
-  username              required
-  password              required
-  port                  required
-  {http,https}          required
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Debug mode: let Python exceptions come through
+  --username [USERNAME]
+  --password [PASSWORD]
+  --port [PORT]
+  --protocol [{http,https}]
 ```
 
 ## Tested Devices
@@ -63,8 +66,8 @@ optional arguments:
 ## How to setup
 * ensure you are wokring with checkmk 1.6
 * Install current package
-   * wget https://github.com/MaximilianClemens/checkmk_fritzbox_smarthome/releases/download/v0.3/fritzbox_smarthome-0.3.mkp -P ~/var/check_mk/packages/
-   * mkp install /var/check_mk/packages/fritzbox_smarthome-0.3.mkp
+   * wget https://github.com/MaximilianClemens/checkmk_fritzbox/releases/download/v0.4/fritzbox_smarthome-0.4.mkp -P ~/var/check_mk/packages/
+   * mkp install /var/check_mk/packages/fritzbox_smarthome-0.4.mkp
 * Configure:
    * Create a new Host for your fritzbox
      * at DATA SOURCES > Check_MK Agent select "No Checkmk agent, all configured agents"
