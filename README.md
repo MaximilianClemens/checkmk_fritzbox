@@ -66,8 +66,8 @@ optional arguments:
 ## How to setup
 * ensure you are wokring with checkmk 1.6
 * Install current package
-   * wget https://github.com/MaximilianClemens/checkmk_fritzbox/releases/download/v0.4/fritzbox_smarthome-0.4.mkp -P ~/var/check_mk/packages/
-   * mkp install /var/check_mk/packages/fritzbox_smarthome-0.4.mkp
+   * wget the latest version from https://github.com/MaximilianClemens/checkmk_fritzbox/releases
+   * then: mkp install /var/check_mk/packages/fritzbox_smarthome-xyz.mkp
 * Configure:
    * Create a new Host for your fritzbox
      * at DATA SOURCES > Check_MK Agent select "No Checkmk agent, all configured agents"
