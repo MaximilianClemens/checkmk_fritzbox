@@ -15,21 +15,11 @@ def parse_args():
     parser.add_argument('--debug', action='store_true', default=False,
         help='Debug mode: let Python exceptions come through')
 
-    parser.add_argument('username', nargs='?',
-        help='Only needed for smarthome check')
-    parser.add_argument('password', nargs='?',
-        help='Only needed for smarthome check')
-    parser.add_argument('port', nargs='?', type=int,
-        help='Only needed for smarthome check')
-    parser.add_argument('protocol', nargs='?', choices=['http', 'https'], default='http',
-        help='Only needed for smarthome check')
-
+    parser.add_argument('--username', nargs='?')
+    parser.add_argument('--password', nargs='?')
+    parser.add_argument('--port', nargs='?', type=int, default=80)
+    parser.add_argument('--protocol', nargs='?', choices=['http', 'https'], default='http')
     args = parser.parse_args()
-
-    if not args.username or not args.password or not args.port or not args.protocol:
-        parser.error('requires username, password, port and protocol')
-    if args.port not in range(0, 65565):
-        parser.error('port must be between 1 and 65565')
 
     return args
 
@@ -39,20 +29,24 @@ def check_fritzbox_smarthome(debug, hostname, username, password, port, protocol
     # CALL /login_sid.lua
     # and grab challenge
     response = urllib2.urlopen(base_address + '/login_sid.lua')
-    xml_login = ET.fromstring(response.read())
-    challenge = xml_login.find('Challenge').text
+    if args.password:
+        xml_login = ET.fromstring(response.read())
+        challenge = xml_login.find('Challenge').text
 
-    # create challenge_response (hash with md5: '<challenge>-<password>')
-    digest = hashlib.md5()
-    digest.update(challenge.encode('utf-16le'))
-    digest.update('-'.encode('utf-16le'))
-    digest.update(password.encode('utf-16le'))
+        # create challenge_response (hash with md5: '<challenge>-<password>')
+        digest = hashlib.md5()
+        digest.update(challenge.encode('utf-16le'))
+        digest.update('-'.encode('utf-16le'))
+        digest.update(password.encode('utf-16le'))
 
-    challenge_response = challenge + '-' + digest.hexdigest()
+        challenge_response = challenge + '-' + digest.hexdigest()
 
-    # CALL /login_sid.lua?username=<username>&response=<challenge_response>
-    # and grab sessionid
-    response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (username, challenge_response))
+        # CALL /login_sid.lua?username=<username>&response=<challenge_response>
+        # and grab sessionid
+        if args.username:
+            response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (username, challenge_response))
+        else:
+            response = urllib2.urlopen(base_address + '/login_sid.lua?response=%s' % (challenge_response))
     xml_login_solve = ET.fromstring(response.read())
     sessionid = xml_login_solve.find('SID').text
 

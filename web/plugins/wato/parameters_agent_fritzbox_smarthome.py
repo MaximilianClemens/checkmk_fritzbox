@@ -61,27 +61,30 @@ def _factory_default_special_agents_fritzbox_smarthome():
 def _valuespec_special_agents_fritzbox_smarthome():
     return Dictionary(
         title=_("Check state of Fritz!Box Smarthome Devices"),
-        help=_("This rule selects the Fritz!Box agent, which uses HTTP/UPNP to gather information "
+        help=_("This rule selects the Fritz!Box agent, which uses HTTP to gather information "
                "about configuration and connection status information."),
         elements=[
-            ('check_smarthome', Tuple(
-                title = _('Query SmartHome Devices'),
-                help = _("Enter Credentials for the Fritz!Box."),
-                elements = [
-                    TextAscii(
-                        title = _('Username'),
-                        allow_empty = False
-                    ),
-                    Password(
-                        title = _('Password'),
-                        allow_empty = False
-                    ),
-                    Integer(
-                        title = _('Port'),
-                        default_value = 80,
-                        allow_empty = False
-                    ),
-                    Alternative(
+            ('username',
+                TextAscii(
+                    title = _('Username'),
+                    allow_empty = False
+                ),
+            ),
+            ('password',
+                Password(
+                    title = _('Password'),
+                    allow_empty = False
+                ),
+            ),
+            ('port',
+                Integer(
+                    title = _('Port'),
+                    default_value = 80,
+                    allow_empty = False
+                ),
+            ),
+            ('protocol',
+                Alternative(
                     title = _('Protocol'),
                     style = 'dropdown',
                     elements = [
@@ -96,10 +99,9 @@ def _valuespec_special_agents_fritzbox_smarthome():
                                 title = _('HTTPS'),
                         )
                     ]),
-                ],
-            )),
+            ),
         ],
-        optional_keys=[],
+        optional_keys=['username', 'password', 'port', 'protocol'],
     )
 
 rulespec_registry.register(

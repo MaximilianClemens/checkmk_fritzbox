@@ -3,13 +3,20 @@
 
 def agent_fritzbox_smarthome_arguments(params, hostname, ipaddress):
     args = quote_shell_string(ipaddress)
-    args += " " + quote_shell_string(params["check_smarthome"][0]) #username
-    args += " " + quote_shell_string(params["check_smarthome"][1]) #password
-    args += " " + str(params["check_smarthome"][2]) # port
-    if str(params["check_smarthome"][3]) == '1': #protocol
-        args += " https"
-    else:
-        args += " http"
+    if "username" in params:
+        args += " --username " + quote_shell_string(params["username"])
+    if "password" in params:
+        args += " --password " + quote_shell_string(params["password"])
+    if "port" in params:
+        args += " --port " + str(params["port"])
+
+    if "protocol" in params:
+        if str(params["protocol"]) == '1':
+            args += " --protocol https"
+        else:
+            args += " --protocol http"
+
+
     return args
 
 special_agent_info['fritzbox_smarthome'] = agent_fritzbox_smarthome_arguments

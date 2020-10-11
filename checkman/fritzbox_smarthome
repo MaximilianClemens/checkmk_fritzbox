@@ -1,10 +1,10 @@
-title: SmartHome Info of Fritz!Box
+title: Fritz!Box Smarthome
 agents: fritzbox_smarthome
 catalog: hw/network/avm
 license: GPL
 distribution: check_mk
 description:
- jep hier sollte was stehen
+ comes with a new agent for fritbox smarthome devices. some values are configurable, but it's still WIP
 
 inventory:
- jep hier auch
+ fritzbox smarthome devices
