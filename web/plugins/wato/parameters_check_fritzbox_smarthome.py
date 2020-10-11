@@ -3,7 +3,7 @@
 
 register_check_parameters(
     subgroup_applications,
-    'fritz_smarthome',
+    'fritzbox_smarthome',
     _('Settings for Fritz!Box Smarthome Devices'),
     Dictionary(
         title = _('Parameter'),

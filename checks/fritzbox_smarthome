@@ -2,7 +2,7 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 
-factory_settings['fritz_smarthome_default_levels'] = {
+factory_settings['fritzbox_smarthome_default_levels'] = {
     'present': 1,
     'hkr': {
         'hkr_warn' : {
@@ -21,7 +21,7 @@ factory_settings['fritz_smarthome_default_levels'] = {
     'temperature': {}
 }
 
-def parse_fritz_smarthome(info):
+def parse_fritzbox_smarthome(info):
     devices = {}
     current_device_id = None
 
@@ -51,10 +51,10 @@ def smarthome_helper_hkr(data, params):
     msg_data = []
     perf_data = []
 
-    if (data['hkr']['summeractive']):
-        msg_data.append('Thermostat Temperature {}°C (Summer-Mode)'.format(data['hkr']['tist']))
-    else:
+    if (int(data['hkr']['summeractive']) == 0):
         msg_data.append('Thermostat Temperature {}°C (Should: {}°C)'.format(data['hkr']['tist'], data['hkr']['tsoll']))
+    else:
+        msg_data.append('Thermostat Temperature {}°C (Summer-Mode)'.format(data['hkr']['tist']))
 
     tist = data['hkr']['tist']
     if 'temperature' in data.keys():
@@ -170,14 +170,16 @@ def smarthome_helper_switch(data, params):
     return (msg_data, perf_data, check_status)
 
 
-def inventory_fritz_smarthome(info):
-    devices = parse_fritz_smarthome(info)
+def inventory_fritzbox_smarthome(info):
+    devices = parse_fritzbox_smarthome(info)
 
     for device_key, device in devices.items():
         device_type = 'Unknown'
         fbm = int(device['base']['functionbitmask'])
         if fbm >> 0 & 1:
             device_type = 'HANFUNDevice'
+        elif fbm >> 13 & 1:
+            device_type = 'HANFUNUnit'
         elif fbm >> 4 & 1:
             device_type = 'AlarmSensor'
         elif fbm >> 5 & 1:
@@ -194,17 +196,19 @@ def inventory_fritz_smarthome(info):
             device_type = 'TemperatureSensor'
         elif fbm >> 11 & 1:
             device_type = 'Microphone'
-        elif fbm >> 13 & 1:
-            device_type = 'HANFUNUnit'
+        elif fbm >> 17 & 1:
+            device_type = 'Light'
+        elif fbm >> 2 & 1:
+            device_type = 'Light'
         yield ('{} {} {}'.format(device_key, device_type, device['base']['name']), None)
 
-def check_fritz_smarthome(item, params, info):
-    devices = parse_fritz_smarthome(info)
+def check_fritzbox_smarthome(item, params, info):
+    devices = parse_fritzbox_smarthome(info)
 
     #prepared params
 
     pparams = {}
-    pparams.update(factory_settings['fritz_smarthome_default_levels'])
+    pparams.update(factory_settings['fritzbox_smarthome_default_levels'])
     if params:
         pparams.update(params)
 
@@ -270,11 +274,11 @@ def check_fritz_smarthome(item, params, info):
     else:
         return check_status, ', '.join(msg_data), perf_data
 
-check_info['fritz_smarthome'] = {
-    'inventory_function'       : inventory_fritz_smarthome,
-    'check_function'           : check_fritz_smarthome,
+check_info['fritzbox_smarthome'] = {
+    'inventory_function'       : inventory_fritzbox_smarthome,
+    'check_function'           : check_fritzbox_smarthome,
     'service_description'      : 'SmartDevice %s',
-    'group'                    : 'fritz_smarthome',
-    'default_levels_variable'  : 'fritz_smarthome_default_levels',
+    'group'                    : 'fritzbox_smarthome',
+    'default_levels_variable'  : 'fritzbox_smarthome_default_levels',
     'has_perfdata'             : True,
 }

@@ -1,32 +1,24 @@
 # checkmk_fritzbox
-This repository contains a modified [check_MK](https://mathias-kettner.com/) Fritz!Box Agent which can gather informations over the AVM AHA HTTP Interface about SmartHome Devices connected to an Fritz!Box.
+This repository contains a additional [check_MK](https://mathias-kettner.com/) Fritz!Box Agent which can gather informations over the AVM AHA HTTP Interface about SmartHome Devices connected to an Fritz!Box. In the first version this was a modification this was a modification of the normal checkmk fritzbox agent now it is seperated from it.<br>
 It also provides a Check for parsing the output, and WATO-Pages for configuring thresholds.
 
 ## CLI Usage
 ```
-./agents/special/agent_fritzbox --help
-usage: agent_fritzbox [-h] [--debug] [--timeout TIMEOUT] [--check-upnp]
-                      [--check-smarthome]
-                      host [username] [password] [port] [{http,https}]
+./agents/special/agent_fritzbox_smarthome --help
+usage: agent_fritzbox_smarthome [-h] [--debug] host [username] [password] [port] [{http,https}]
 
-Check_MK Fritz!Box Agent
+Check_MK Fritz!Box Smarthome Agent
 
 positional arguments:
   host                  Host name or IP address of your Fritz!Box
-  username              Only needed for smarthome check
-  password              Only needed for smarthome check
-  port                  Only needed for smarthome check
-  {http,https}          Only needed for smarthome check
+  username              required
+  password              required
+  port                  required
+  {http,https}          required
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Debug mode: let Python exceptions come through
-  --timeout TIMEOUT, -t TIMEOUT
-                        Set the network timeout to <SEC> seconds. Default is
-                        10 seconds. Note: the timeout is not applied to the
-                        whole check, instead it is used for each API query.
-  --check-upnp          Use the UPNP API
-  --check-smarthome     Use the AHA HTTP Interface
 ```
 
 ## Tested Devices
@@ -69,20 +61,23 @@ optional arguments:
    * Nothing yet (no idea what to check here)
 
 ## How to setup
-* Way 1:
-   * Copy the files from this repo to your /omd/sites/<omdname>/local dir
-* Way 2 (probably preferred, never tested but should work):
-   * Grab the .mkp file from releases
-   * on your omd site enter mkp install package.mkp (see https://checkmk.de/cms_mkps.html)
+* ensure you are wokring with checkmk 1.6
+* Install current package
+   * wget https://github.com/MaximilianClemens/checkmk_fritzbox_smarthome/releases/download/v0.3/fritzbox_smarthome-0.3.mkp -P ~/var/check_mk/packages/
+   * mkp install /var/check_mk/packages/fritzbox_smarthome-0.3.mkp
 * Configure:
-   * Host & Service Parameters
-   * search for Check state of Fritz!Box Devices
-   * there should now be a new option "Query SmartHome Devices"
-   * enter the credentials and save
+   * Create a new Host for your fritzbox
+     * at DATA SOURCES > Check_MK Agent select "No Checkmk agent, all configured agents"
+     * Save & Finish
+   * Host & Service Parameters 
+   * search for fritz
+   * Create an new rule in "Check state of Fritz!Box Smarthome Devices"
+     * Enter Credentials, Port and Protocol
+     * Explicit Host : <your fritzbox host>
+     * Save
    * (re)-inventory the (fritzbox) host, the smarthome devices should now be detected
 
 ## Credits
-* Matthias Kettner (for the basic agent) <mk@mathias-kettner.de> / [Matthias Kettner GmbH](https://mathias-kettner.com/)
 * Gerold Gruber <info@edv2g.de> / [edv2g](https://edv2g.de/)
 * Maximilian Clemens <maximilian.clemens@mailbox.org> / [gamma.red](https://gamma.red/)
 

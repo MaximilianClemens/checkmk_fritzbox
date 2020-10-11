@@ -1,0 +1,15 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def agent_fritzbox_smarthome_arguments(params, hostname, ipaddress):
+    args = quote_shell_string(ipaddress)
+    args += " " + quote_shell_string(params["check_smarthome"][0]) #username
+    args += " " + quote_shell_string(params["check_smarthome"][1]) #password
+    args += " " + str(params["check_smarthome"][2]) # port
+    if str(params["check_smarthome"][3]) == '1': #protocol
+        args += " https"
+    else:
+        args += " http"
+    return args
+
+special_agent_info['fritzbox_smarthome'] = agent_fritzbox_smarthome_arguments
