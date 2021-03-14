@@ -16,6 +16,8 @@ def agent_fritzbox_smarthome_arguments(params, hostname, ipaddress):
         else:
             args += " --protocol http"
 
+    if "ssl" in params:
+        args += " --ignore_ssl"
 
     return args
 

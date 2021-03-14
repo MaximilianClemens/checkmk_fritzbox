@@ -64,7 +64,7 @@ optional arguments:
    * Nothing yet (no idea what to check here)
 
 ## How to setup
-* ensure you are wokring with checkmk 1.6
+* ensure you are working with checkmk 1.6
 * Install current package
    * wget the latest version from https://github.com/MaximilianClemens/checkmk_fritzbox/releases
    * then: mkp install /var/check_mk/packages/fritzbox_smarthome-xyz.mkp

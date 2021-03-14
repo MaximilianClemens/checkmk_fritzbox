@@ -100,8 +100,14 @@ def _valuespec_special_agents_fritzbox_smarthome():
                         )
                     ]),
             ),
+            ( 'ssl', FixedValue(
+                    0,
+                    totext = 'Agent will ignore SSL errors',
+                    title = _('Ignore SSL errors'),
+                )
+            ),
         ],
-        optional_keys=['username', 'password', 'port', 'protocol'],
+        optional_keys=['username', 'password', 'port', 'protocol', 'ssl'],
     )
 
 rulespec_registry.register(

@@ -3,7 +3,7 @@
 
 
 
-import getopt, sys, socket, urllib2, traceback, re, pprint
+import getopt, sys, socket, urllib2, traceback, re, pprint, ssl
 import argparse
 import xml.etree.ElementTree as ET
 import hashlib
@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument('--username', nargs='?')
     parser.add_argument('--password', nargs='?')
     parser.add_argument('--port', nargs='?', type=int, default=80)
+    parser.add_argument('--ignore_ssl', action='store_true', default=False)
     parser.add_argument('--protocol', nargs='?', choices=['http', 'https'], default='http')
     args = parser.parse_args()
 
@@ -26,9 +27,14 @@ def parse_args():
 def check_fritzbox_smarthome(args):
     base_address = '%s://%s:%d' % (args.protocol, args.host, args.port)
 
+    ctx = ssl.create_default_context()
+    if args.ignore_ssl:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
     # CALL /login_sid.lua
     # and grab challenge
-    response = urllib2.urlopen(base_address + '/login_sid.lua')
+    response = urllib2.urlopen(base_address + '/login_sid.lua', context=ctx)
     if args.password:
         xml_login = ET.fromstring(response.read())
         challenge = xml_login.find('Challenge').text
@@ -49,9 +55,9 @@ def check_fritzbox_smarthome(args):
         # CALL /login_sid.lua?username=<username>&response=<challenge_response>
         # and grab sessionid
         if args.username:
-            response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (args.username, challenge_response))
+            response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (args.username, challenge_response), context=ctx)
         else:
-            response = urllib2.urlopen(base_address + '/login_sid.lua?response=%s' % (challenge_response))
+            response = urllib2.urlopen(base_address + '/login_sid.lua?response=%s' % (challenge_response), context=ctx)
     xml_login_solve = ET.fromstring(response.read())
     sessionid = xml_login_solve.find('SID').text
 
@@ -67,7 +73,7 @@ def check_fritzbox_smarthome(args):
 
     # CALL /webservices/homeautoswitch.lua?switchcmd=getdevicelistinfos&sid=<SID>
     # and convert response to check output
-    response = urllib2.urlopen(base_address + '/webservices/homeautoswitch.lua?switchcmd=getdevicelistinfos&sid=%s' % (sessionid))
+    response = urllib2.urlopen(base_address + '/webservices/homeautoswitch.lua?switchcmd=getdevicelistinfos&sid=%s' % (sessionid), context=ctx)
     response_read = response.read()
     if args.debug:
         sys.stdout.write('Raw XML:\n')

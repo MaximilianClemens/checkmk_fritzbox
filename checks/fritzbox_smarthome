@@ -27,7 +27,7 @@ def parse_fritzbox_smarthome(info):
 
     for line in info:
         fullline = ' '.join(line)
-        if 'id=' in fullline:
+        if fullline.startswith('id='):
             current_device_id = fullline.split('=')[1]
             devices[current_device_id] = {}
             continue
