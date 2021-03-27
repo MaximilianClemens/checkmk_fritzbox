@@ -21,6 +21,15 @@ factory_settings['fritzbox_smarthome_default_levels'] = {
     'temperature': {}
 }
 
+
+def nested_update(d, u):
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            d[k] = nested_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
 def parse_fritzbox_smarthome(info):
     devices = {}
     current_device_id = None
@@ -208,9 +217,9 @@ def check_fritzbox_smarthome(item, params, info):
     #prepared params
 
     pparams = {}
-    pparams.update(factory_settings['fritzbox_smarthome_default_levels'])
+    pparams = nested_update(pparams, factory_settings['fritzbox_smarthome_default_levels'])
     if params:
-        pparams.update(params)
+        pparams = nested_update(pparams, params)
 
     device = None
     msg_data = []
