@@ -228,7 +228,7 @@ def check_fritzbox_smarthome(item, params, info):
 
     # Find current device
     for device_key, device_n in devices.items():
-        if item.startswith(device_key):
+        if item.startswith(device_key + " "):
             device = device_n
             break
 
