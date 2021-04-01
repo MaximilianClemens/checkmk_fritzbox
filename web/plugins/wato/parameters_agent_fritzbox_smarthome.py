@@ -107,7 +107,7 @@ def _valuespec_special_agents_fritzbox_smarthome():
                 )
             ),
         ],
-        optional_keys=['username', 'password', 'port', 'protocol', 'ssl'],
+        optional_keys=['port', 'protocol', 'ssl'],
     )
 
 rulespec_registry.register(

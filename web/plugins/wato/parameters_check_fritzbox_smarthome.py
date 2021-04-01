@@ -34,6 +34,7 @@ register_check_parameters(
             ( 'hkr', Dictionary(
                 title = _('Thermostat (battery settings are also here)'),
                 elements = [
+                    ('hkr_bat_always', FixedValue(True, totext='Batterystate will be shown in Status Details', title = _('Show Batterystate always'))),
                     ('hkr_warn', Dictionary(
                         title = _('Thresholds for WARN'),
                         optional_keys = [ 'hkr_diff_soll', 'hkr_bat_below' ],

@@ -5,6 +5,7 @@
 factory_settings['fritzbox_smarthome_default_levels'] = {
     'present': 1,
     'hkr': {
+        'hkr_bat_always': False,
         'hkr_warn' : {
             'hkr_bat_below' : 30,
             'hkr_diff_soll': 5,
@@ -93,6 +94,7 @@ def smarthome_helper_hkr(data, params):
     perf_data.append(('hkr_komfort', data['hkr']['komfort']))
 
     perf_data.append(('ref_temperature', tist))
+    bat_added = False
 
     if (not data['hkr']['summeractive']):
         if float(params['hkr_crit']['hkr_diff_soll']) < diff:
@@ -105,9 +107,11 @@ def smarthome_helper_hkr(data, params):
     if float(params['hkr_crit']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Battery low ({}%)!'.format(data['hkr']['battery']))
+        bat_added = True
     elif float(params['hkr_warn']['hkr_bat_below']) > float(data['hkr']['battery']):
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Battery low ({}%)!'.format(data['hkr']['battery']))
+        bat_added = True
 
     if params['hkr_crit']['hkr_flags'][0] and data['hkr']['errorcode'] != str(0):
         check_status = 2 if check_status < 2 else check_status
@@ -119,9 +123,14 @@ def smarthome_helper_hkr(data, params):
     if params['hkr_crit']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Batterywarning ({}%)'.format(data['hkr']['battery']))
+        bat_added = True
     elif params['hkr_warn']['hkr_flags'][1] and data['hkr']['batterylow'] != str(0):
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Batterywarning ({}%)'.format(data['hkr']['battery']))
+        bat_added = True
+
+    if not bat_added and params['hkr_bat_always']:
+        msg_data.append('Battery at {}%'.format(data['hkr']['battery']))
 
     if params['hkr_crit']['hkr_flags'][2] and data['hkr']['windowopenactiv'] != str(0):
         check_status = 2 if check_status < 2 else check_status

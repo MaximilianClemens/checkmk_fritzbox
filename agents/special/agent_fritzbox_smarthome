@@ -2,7 +2,6 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 
-
 import getopt, sys, socket, urllib2, traceback, re, pprint, ssl
 import argparse
 import xml.etree.ElementTree as ET
@@ -11,12 +10,12 @@ import hashlib
 def parse_args():
     parser = argparse.ArgumentParser(description='Check_MK Fritz!Box Smarthome Agent')
     parser.add_argument('host', help='Host name or IP address of your Fritz!Box')
+    parser.add_argument('username')
+    parser.add_argument('password')
 
     parser.add_argument('--debug', action='store_true', default=False,
         help='Debug mode: let Python exceptions come through')
 
-    parser.add_argument('--username', nargs='?')
-    parser.add_argument('--password', nargs='?')
     parser.add_argument('--port', nargs='?', type=int, default=80)
     parser.add_argument('--ignore_ssl', action='store_true', default=False)
     parser.add_argument('--protocol', nargs='?', choices=['http', 'https'], default='http')
@@ -45,6 +44,7 @@ def check_fritzbox_smarthome(args):
             raise Exception('Login blocked for %d secs' % blocktime)
 
         # create challenge_response (hash with md5: '<challenge>-<password>')
+        # TODO: check if challenge is PBKDF2 (startswith $2)
         digest = hashlib.md5()
         digest.update(challenge.encode('utf-16le'))
         digest.update('-'.encode('utf-16le'))
@@ -58,6 +58,7 @@ def check_fritzbox_smarthome(args):
             response = urllib2.urlopen(base_address + '/login_sid.lua?username=%s&response=%s' % (args.username, challenge_response), context=ctx)
         else:
             response = urllib2.urlopen(base_address + '/login_sid.lua?response=%s' % (challenge_response), context=ctx)
+
     xml_login_solve = ET.fromstring(response.read())
     sessionid = xml_login_solve.find('SID').text
 

@@ -3,10 +3,9 @@
 
 def agent_fritzbox_smarthome_arguments(params, hostname, ipaddress):
     args = quote_shell_string(ipaddress)
-    if "username" in params:
-        args += " --username " + quote_shell_string(params["username"])
-    if "password" in params:
-        args += " --password " + quote_shell_string(params["password"])
+    args += " " + quote_shell_string(params["username"])
+    args += " " + quote_shell_string(params["password"])
+
     if "port" in params:
         args += " --port " + str(params["port"])
 
