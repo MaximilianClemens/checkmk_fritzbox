@@ -4,7 +4,8 @@ catalog: hw/network/avm
 license: GPL
 distribution: check_mk
 description:
- comes with a new agent for fritbox smarthome devices. some values are configurable, but it's still WIP
+ Comes with a new agent for Fritz!Box smarthome devices. Some values are configurable.
+ Feel free to report bugs at https://github.com/MaximilianClemens/checkmk_fritzbox/issues/
 
 inventory:
  fritzbox smarthome devices

@@ -24,7 +24,7 @@ factory_settings['fritzbox_smarthome_default_levels'] = {
 
 
 def nested_update(d, u):
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             d[k] = nested_update(d.get(k, {}), v)
         else:
@@ -244,7 +244,7 @@ def check_fritzbox_smarthome(item, params, info):
     if not device:
         return 3, 'DEVICE NOT FOUND'
 
-    if device['base']['present'] == '0':
+    if int(device['base']['present']) == 0:
         if int(pparams['present']) == 1: #WARN
             check_status = 1 if check_status < 1 else check_status
         if int(pparams['present']) == 2: #CRIT
@@ -253,7 +253,7 @@ def check_fritzbox_smarthome(item, params, info):
 
     msg_data.append('{} {} (FW: {})'.format(device['base']['manufacturer'], device['base']['productname'], device['base']['fwversion']))
 
-    if device['base']['present'] != '0':
+    if int(device['base']['present']) != 0:
         fbm = int(device['base']['functionbitmask'])
         if fbm >> 0 & 1: #HANFUNDevice
             pass
@@ -290,7 +290,7 @@ def check_fritzbox_smarthome(item, params, info):
         if fbm >> 13 & 1: #HANFUNUnit
             pass
 
-        return check_status, ', '.join(msg_data), perf_data
+    return check_status, ', '.join(msg_data), perf_data
 
 check_info['fritzbox_smarthome'] = {
     'inventory_function'       : inventory_fritzbox_smarthome,
