@@ -241,6 +241,9 @@ def check_fritzbox_smarthome(item, params, info):
             device = device_n
             break
 
+    if not device:
+        return 3, 'DEVICE NOT FOUND'
+
     if device['base']['present'] == '0':
         if int(pparams['present']) == 1: #WARN
             check_status = 1 if check_status < 1 else check_status
@@ -287,9 +290,6 @@ def check_fritzbox_smarthome(item, params, info):
         if fbm >> 13 & 1: #HANFUNUnit
             pass
 
-    if not device_n:
-        return 3, 'DEVICE NOT FOUND'
-    else:
         return check_status, ', '.join(msg_data), perf_data
 
 check_info['fritzbox_smarthome'] = {
