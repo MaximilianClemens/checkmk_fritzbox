@@ -90,7 +90,7 @@ def check_fritzbox_smarthome(args):
         sys.stdout.write('base|manufacturer=%s\n' % device.get('manufacturer'))
         sys.stdout.write('base|productname=%s\n' % device.get('productname').replace(' ',''))
         sys.stdout.write('base|present=%s\n' % device.find('present').text)
-        sys.stdout.write('base|name=%s\n' % device.find('name').text)
+        sys.stdout.write('base|name=%s\n' % device.find('name').text.encode('ascii','ignore').decode('ascii'))
 
         for subelement in device.findall('*'):
             if subelement.tag == 'name':
