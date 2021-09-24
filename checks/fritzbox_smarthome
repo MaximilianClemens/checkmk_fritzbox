@@ -21,14 +21,8 @@ factory_settings['fritzbox_smarthome_default_levels'] = {
     'powermeter': {},
     'temperature': {},
     'humidity': {
-        'humidity_crit':  {
-            'humidity_high': 70,
-            'humidity_low': 30
-        },
-        'humidity_warn':  {
-            'humidity_high': 60,
-            'humidity_low': 40
-        }
+        'humidity_crit':  [70, 30],
+        'humidity_warn':  [60, 40]
     }
 }
 
@@ -192,16 +186,16 @@ def smarthome_helper_humidity(data, params):
 
     humidity = int(data['humidity']['rel_humidity'])
 
-    if int(params['humidity_crit']['humidity_high']) < humidity: # High crit
+    if int(params['humidity_crit'][0]) < humidity: # High crit
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Humidity is {}% (to high!)'.format(humidity))
-    elif int(params['humidity_crit']['humidity_low']) > humidity: # Low crit
+    elif int(params['humidity_crit'][1]) > humidity: # Low crit
         check_status = 2 if check_status < 2 else check_status
         msg_data.append('Humidity is {}% (to low!)'.format(humidity))
-    elif int(params['humidity_warn']['humidity_high']) < humidity: # High warn
+    elif int(params['humidity_warn'][0]) < humidity: # High warn
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Humidity is {}% (to high!)'.format(humidity))
-    elif int(params['humidity_warn']['humidity_low']) > humidity: # Low warn
+    elif int(params['humidity_warn'][1]) > humidity: # Low warn
         check_status = 1 if check_status < 1 else check_status
         msg_data.append('Humidity is {}% (to low!)'.format(humidity))
     else:

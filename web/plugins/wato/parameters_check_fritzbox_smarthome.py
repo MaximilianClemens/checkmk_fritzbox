@@ -1,11 +1,25 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-register_check_parameters(
-    subgroup_applications,
-    'fritzbox_smarthome',
-    _('Settings for Fritz!Box Smarthome Devices'),
-    Dictionary(
+from typing import Type, Optional, List
+from cmk.gui.i18n import _
+from cmk.gui.valuespec import (
+    Alternative,
+    Dictionary,
+    Integer,
+    Tuple,
+    FixedValue,
+    TextAscii,
+)
+from cmk.gui.plugins.wato import (
+    RulespecGroupCheckParametersApplications,
+    CheckParameterRulespecWithItem,
+    rulespec_registry,
+)
+
+
+def _parameter_valuespec_fritzbox_smarthome():
+    return Dictionary(
         title = _('Parameter'),
         optional_keys = None,
         elements = [
@@ -76,20 +90,18 @@ register_check_parameters(
                 title = _('Humidity'),
                 
                 elements = [
-                    ('humidity_warn', Dictionary(
+                    ('humidity_warn', Tuple(
                         title = _('Thresholds for WARN'),
-                        optional_keys = [ ],
                         elements = [
-                            ('humidity_high', Integer(label = _('higher than'), title = _('Humidity'), unit = u'%', default_value = 60)),
-                            ('humidity_low', Integer(label = _('lesser than'), title = _('Humidity'), unit = u'%', default_value = 40)),
+                            Integer(label = _('higher than'), unit = u'%', default_value = 60),
+                            Integer(label = _('lesser than'), unit = u'%', default_value = 40),
                         ]
                     )),
-                    ('humidity_crit', Dictionary(
+                    ('humidity_crit', Tuple(
                         title = _('Thresholds for CRIT'),
-                        optional_keys = [ ],
                         elements = [
-                            ('humidity_high', Integer(label = _('higher than'), title = _('Humidity'), unit = u'%', default_value = 70)),
-                            ('humidity_low', Integer(label = _('lesser than'), title = _('Humidity'), unit = u'%', default_value = 30)),
+                            Integer(label = _('higher than'), unit = u'%', default_value = 70),
+                            Integer(label = _('lesser than'), unit = u'%', default_value = 30),
                         ]
                     )),
                 ])
@@ -97,7 +109,18 @@ register_check_parameters(
 
             # temperature
         ]
-        ),
-    TextAscii(title = _('Device-ID')),
-    match_type = 'dict',
     )
+
+def _item_spec_fritzbox_smarthome_devices():
+    return TextAscii(title=_("Device-ID"))
+
+rulespec_registry.register(
+    CheckParameterRulespecWithItem(
+        check_group_name="fritzbox_smarthome",
+        group=RulespecGroupCheckParametersApplications,
+        item_spec=_item_spec_fritzbox_smarthome_devices,
+        match_type="dict",
+        parameter_valuespec=_parameter_valuespec_fritzbox_smarthome,
+        title=lambda: _('Settings for Fritz!Box Smarthome Devices')
+    )
+)
