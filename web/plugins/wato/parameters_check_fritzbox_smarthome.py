@@ -71,6 +71,31 @@ register_check_parameters(
                     ),
                 ])
             ),
+
+            ( 'humidity', Dictionary(
+                title = _('Humidity'),
+                
+                elements = [
+                    ('humidity_warn', Dictionary(
+                        title = _('Thresholds for WARN'),
+                        optional_keys = [ ],
+                        elements = [
+                            ('humidity_high', Integer(label = _('higher than'), title = _('Humidity'), unit = u'%', default_value = 60)),
+                            ('humidity_low', Integer(label = _('lesser than'), title = _('Humidity'), unit = u'%', default_value = 40)),
+                        ]
+                    )),
+                    ('humidity_crit', Dictionary(
+                        title = _('Thresholds for CRIT'),
+                        optional_keys = [ ],
+                        elements = [
+                            ('humidity_high', Integer(label = _('higher than'), title = _('Humidity'), unit = u'%', default_value = 70)),
+                            ('humidity_low', Integer(label = _('lesser than'), title = _('Humidity'), unit = u'%', default_value = 30)),
+                        ]
+                    )),
+                ])
+            ),
+
+            # temperature
         ]
         ),
     TextAscii(title = _('Device-ID')),

@@ -19,7 +19,17 @@ factory_settings['fritzbox_smarthome_default_levels'] = {
     },
     'switch': {},
     'powermeter': {},
-    'temperature': {}
+    'temperature': {},
+    'humidity': {
+        'humidity_crit':  {
+            'humidity_high': 70,
+            'humidity_low': 30
+        },
+        'humidity_warn':  {
+            'humidity_high': 60,
+            'humidity_low': 40
+        }
+    }
 }
 
 
@@ -174,6 +184,33 @@ def smarthome_helper_temperature(data, params):
 
     return (msg_data, perf_data, check_status)
 
+def smarthome_helper_humidity(data, params):
+
+    check_status = 0
+    msg_data = []
+    perf_data = []
+
+    humidity = int(data['humidity']['rel_humidity'])
+
+    if int(params['humidity_crit']['humidity_high']) < humidity: # High crit
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Humidity is {}% (to high!)'.format(humidity))
+    elif int(params['humidity_crit']['humidity_low']) > humidity: # Low crit
+        check_status = 2 if check_status < 2 else check_status
+        msg_data.append('Humidity is {}% (to low!)'.format(humidity))
+    elif int(params['humidity_warn']['humidity_high']) < humidity: # High warn
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Humidity is {}% (to high!)'.format(humidity))
+    elif int(params['humidity_warn']['humidity_low']) > humidity: # Low warn
+        check_status = 1 if check_status < 1 else check_status
+        msg_data.append('Humidity is {}% (to low!)'.format(humidity))
+    else:
+        msg_data.append('Humidity is {}%'.format(humidity))
+    
+    perf_data.append(('humidity', humidity))
+
+    return (msg_data, perf_data, check_status)
+
 def smarthome_helper_switch(data, params):
 
     check_status = 0
@@ -261,7 +298,6 @@ def check_fritzbox_smarthome(item, params, info):
             #alert
             pass
         if fbm >> 5 & 1: #Taster
-            #button
             pass
         if fbm >> 6 & 1: #Thermostat
             r = smarthome_helper_hkr(device, pparams['hkr'])
@@ -289,6 +325,14 @@ def check_fritzbox_smarthome(item, params, info):
             pass
         if fbm >> 13 & 1: #HANFUNUnit
             pass
+
+        if 'humidity' in device.keys():
+            # seems related for functionbit 5 only (AVMButton)
+            # so this may change in a future release
+            r = smarthome_helper_humidity(device, pparams['humidity'])
+            msg_data.extend(r[0])
+            perf_data.extend(r[1])
+            check_status = r[2] if check_status < r[2] else check_status
 
     return check_status, ', '.join(msg_data), perf_data
 
