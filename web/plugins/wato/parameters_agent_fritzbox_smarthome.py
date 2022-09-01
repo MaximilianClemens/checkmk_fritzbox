@@ -3,7 +3,7 @@
 
 import cmk.gui.watolib as watolib
 from cmk.gui.plugins.wato import rulespec_registry, HostRulespec
-from cmk.gui.plugins.wato.datasource_programs import RulespecGroupDatasourcePrograms, _valuespec_datasource_programs
+from cmk.gui.plugins.wato.datasource_programs import RulespecGroupDatasourceProgramsHardware, _valuespec_datasource_programs
 
 def _factory_default_special_agents_fritzbox_smarthome():
     # No default, do not use setting if no rule matches
@@ -61,7 +61,7 @@ def _valuespec_special_agents_fritzbox_smarthome():
 rulespec_registry.register(
     HostRulespec(
         factory_default=_factory_default_special_agents_fritzbox_smarthome(),
-        group=RulespecGroupDatasourcePrograms,
+        group=RulespecGroupDatasourceProgramsHardware,
         name="special_agents:fritzbox_smarthome",
         valuespec=_valuespec_special_agents_fritzbox_smarthome,
     ))
