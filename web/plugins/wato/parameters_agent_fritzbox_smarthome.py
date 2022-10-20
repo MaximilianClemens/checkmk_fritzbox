@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 import cmk.gui.watolib as watolib
 from cmk.gui.plugins.wato import rulespec_registry, HostRulespec
-from cmk.gui.plugins.wato.datasource_programs import RulespecGroupDatasourceProgramsHardware, _valuespec_datasource_programs
+from cmk.gui.plugins.wato.datasource_programs import RulespecGroupDatasourceProgramsHardware
 
 def _factory_default_special_agents_fritzbox_smarthome():
     # No default, do not use setting if no rule matches
