@@ -10,8 +10,9 @@ from cmk.gui.valuespec import (
     Tuple,
     FixedValue,
     TextAscii,
+    Checkbox,
 )
-from cmk.gui.plugins.wato import (
+from cmk.gui.plugins.wato.utils import (
     RulespecGroupCheckParametersApplications,
     CheckParameterRulespecWithItem,
     rulespec_registry,
@@ -21,7 +22,7 @@ from cmk.gui.plugins.wato import (
 def _parameter_valuespec_fritzbox_smarthome():
     return Dictionary(
         title = _('Parameter'),
-        optional_keys = None,
+        optional_keys = [],
         elements = [
             ( 'present', Alternative(
                 title = _('Offline Devices'),
