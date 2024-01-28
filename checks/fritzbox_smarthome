@@ -21,8 +21,8 @@ factory_settings['fritzbox_smarthome_default_levels'] = {
     'powermeter': {},
     'temperature': {},
     'humidity': {
-        'humidity_crit':  [70, 30],
-        'humidity_warn':  [60, 40]
+        'humidity_crit':  (70, 30),
+        'humidity_warn':  (60, 40)
     }
 }
 
