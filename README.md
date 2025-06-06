@@ -1,3 +1,9 @@
+# Archive State
+
+The agent and checks have been recreated for Checkmk 2.4.0. You can find the updated version here: [checkmk\_fritzbox\_smarthome](https://github.com/MaximilianClemens/checkmk_fritzbox_smarthome).
+All further development will take place in that repository.
+
+
 # checkmk_fritzbox
 This repository contains a additional [check_MK](https://mathias-kettner.com/) Fritz!Box Agent which can gather informations over the AVM AHA HTTP Interface about SmartHome Devices connected to an Fritz!Box. In the first version this was a modification this was a modification of the normal checkmk fritzbox agent now it is seperated from it.<br>
 It also provides a Check for parsing the output, and WATO-Pages for configuring thresholds.
